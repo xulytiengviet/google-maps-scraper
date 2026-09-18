@@ -73,11 +73,13 @@ func (s *Server) exportJob(w http.ResponseWriter, r *http.Request) {
 }
 
 func readCSVAsMaps(path string) ([]map[string]string, error) {
-	f, err := os.Open(filepath.Clean(path))
+	f, err := os.Open(filepath.Clean(path)) //nolint:gosec // path comes from Service.GetCSV and is rooted in the configured data folder.
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 
 	r := csv.NewReader(f)
 	r.FieldsPerRecord = -1
