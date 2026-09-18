@@ -401,10 +401,57 @@ function buildPayload(){
   };
 }
 
+function buildActionsConfig(){
+  const qs=$('keywords').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  if(!qs.length)throw new Error('Hãy chọn hoặc nhập ít nhất một loại POI cần tìm.');
+
+  if(mode==='radius'&&!sourcePoint)throw new Error('Hãy dán URL Google Maps và đọc vị trí trước.');
+  if(mode==='boundary'&&!$('boundaryQuery').value.trim())throw new Error('Hãy nhập tên địa giới.');
+  if(mode==='route'&&parsePoints($('routeInput').value).length<2)throw new Error('Chế độ tuyến cần ít nhất 2 tọa độ.');
+
+  const routeOneLine=$('routeInput').value
+    .split(/\r?\n|;/)
+    .map(s=>s.trim())
+    .filter(Boolean)
+    .join(';');
+
+  return [
+    'maps_url='+$('mapsUrl').value.trim(),
+    'keywords='+qs.join(';'),
+    'mode='+mode,
+    'radius='+($('radius').value||'5000'),
+    'boundary_query='+$('boundaryQuery').value.trim(),
+    'boundary_spacing='+($('boundarySpacing').value||'5'),
+    'route_input='+routeOneLine,
+    'route_spacing='+($('routeSpacing').value||'3'),
+    'depth='+($('depth').value||'10'),
+    'max_time='+($('maxTime').value||'900'),
+    'email='+String($('fetchEmail').checked),
+    'fast_mode='+String($('fastMode').checked)
+  ].join('\n');
+}
+
 $('startJob').onclick=()=>{
-  const msg='Chế độ thu thập chạy cục bộ trên PC. Tải repository về máy, chạy START_LOCAL_WINDOWS.bat, chọn thư mục lưu rồi sử dụng giao diện local.';
-  setStatus($('jobStatus'),msg,'ok');
-  window.open('https://github.com/xulytiengviet/google-maps-scraper','_blank','noopener');
+  try{
+    const config=buildActionsConfig();
+    const box=$('actionConfig');
+    box.value=config;
+    box.classList.remove('hidden');
+
+    const workflow='https://github.com/xulytiengviet/google-maps-scraper/actions/workflows/poi-scraper.yml';
+    window.open(workflow,'_blank','noopener');
+
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(config).then(
+        ()=>setStatus($('jobStatus'),'Đã sao chép cấu hình. Tab GitHub Actions đã mở; chọn Run workflow và điền theo block bên dưới.','ok'),
+        ()=>setStatus($('jobStatus'),'Tab GitHub Actions đã mở. Hãy sao chép block cấu hình bên dưới vào Run workflow.','warn')
+      );
+    }else{
+      setStatus($('jobStatus'),'Tab GitHub Actions đã mở. Hãy sao chép block cấu hình bên dưới vào Run workflow.','warn');
+    }
+  }catch(e){
+    setStatus($('jobStatus'),e.message,'error');
+  }
 };
 
 setMode('radius');
