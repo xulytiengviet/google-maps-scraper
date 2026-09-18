@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Google Maps Spatial Data Explorer - WebGIS frontend for xulytiengviet/google-maps-scraper">
+  <title>Google Maps Spatial Data Explorer</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <link rel="stylesheet" href="./pages-style.css">
+</head>
+<body>
+<header class="topbar">
+  <div>
+    <h1>Google Maps Spatial Data Explorer</h1>
+    <p>Tìm kiếm địa điểm theo chủ đề, tọa độ, bán kính, tuyến và địa giới; xuất CSV / JSON / GeoJSON.</p>
+  </div>
+  <div class="toplinks">
+    <a href="https://github.com/xulytiengviet/google-maps-scraper" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://github.com/xulytiengviet/google-maps-scraper/pull/1" target="_blank" rel="noopener">WebGIS PR</a>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="controls">
+    <section class="card">
+      <h2>1. Backend API</h2>
+      <label for="apiBase">URL máy chủ scraper</label>
+      <input id="apiBase" type="url" placeholder="https://api.example.com">
+      <div class="row">
+        <button id="saveApi" type="button">Lưu API</button>
+        <button id="testApi" type="button" class="secondary">Kiểm tra</button>
+      </div>
+      <p class="muted">GitHub Pages chỉ chạy frontend. Scraper Go/Playwright phải chạy trên máy chủ khác qua HTTPS.</p>
+      <div id="apiStatus" class="status"></div>
+    </section>
+
+    <section class="card">
+      <h2>2. Nội dung cần lấy</h2>
+      <label for="jobName">Tên tác vụ</label>
+      <input id="jobName" type="text" placeholder="VD: Nhà hàng Vĩnh Long">
+
+      <label for="keywords">Chủ đề / tên / số điện thoại / email / địa chỉ</label>
+      <textarea id="keywords" rows="6" placeholder="Một truy vấn mỗi dòng&#10;nhà hàng hải sản&#10;khách sạn&#10;0290 3xx xxxx"></textarea>
+
+      <div class="grid2">
+        <div>
+          <label for="lang">Ngôn ngữ</label>
+          <input id="lang" value="vi" maxlength="2">
+        </div>
+        <div>
+          <label for="depth">Độ sâu</label>
+          <input id="depth" type="number" value="10" min="1">
+        </div>
+      </div>
+
+      <label class="check"><input id="fetchEmail" type="checkbox"> Làm giàu email từ website công khai</label>
+      <label class="check"><input id="fastMode" type="checkbox" checked> Fast mode</label>
+    </section>
+
+    <section class="card">
+      <h2>3. Phạm vi không gian</h2>
+      <div class="tabs">
+        <button class="tab active" data-mode="text" type="button">Khu vực chữ</button>
+        <button class="tab" data-mode="radius" type="button">Tọa độ</button>
+        <button class="tab" data-mode="route" type="button">Tuyến</button>
+        <button class="tab" data-mode="boundary" type="button">Địa giới</button>
+      </div>
+
+      <div class="mode active" data-panel="text">
+        <label for="areaHint">Khu vực / địa chỉ bổ sung</label>
+        <input id="areaHint" placeholder="VD: phường Phước Hậu, Vĩnh Long">
+      </div>
+
+      <div class="mode" data-panel="radius">
+        <label for="mapsLocation">Tọa độ hoặc URL Google Maps</label>
+        <input id="mapsLocation" placeholder="10.2537,105.9722 hoặc URL Google Maps">
+        <div class="grid2">
+          <div>
+            <label for="lat">Vĩ độ</label>
+            <input id="lat" type="number" step="0.0000001">
+          </div>
+          <div>
+            <label for="lon">Kinh độ</label>
+            <input id="lon" type="number" step="0.0000001">
+          </div>
+        </div>
+        <label for="radius">Bán kính (m)</label>
+        <input id="radius" type="number" value="5000" min="100" step="100">
+        <button id="parseLocation" type="button" class="secondary full">Đọc tọa độ</button>
+      </div>
+
+      <div class="mode" data-panel="route">
+        <label for="routeInput">Danh sách tọa độ / Google Maps URL / GeoJSON LineString</label>
+        <textarea id="routeInput" rows="5" placeholder="10.2537,105.9722&#10;10.3000,106.0000&#10;10.3500,106.0500"></textarea>
+        <label for="routeSpacing">Khoảng cách lấy mẫu dọc tuyến (km)</label>
+        <input id="routeSpacing" type="number" value="3" min="0.5" step="0.5">
+        <button id="buildRoute" type="button" class="secondary full">Tạo điểm theo tuyến</button>
+      </div>
+
+      <div class="mode" data-panel="boundary">
+        <label for="boundaryQuery">Tên xã/phường/tỉnh</label>
+        <input id="boundaryQuery" placeholder="VD: phường Phước Hậu, Vĩnh Long">
+        <label for="boundarySpacing">Lưới lấy mẫu (km)</label>
+        <input id="boundarySpacing" type="number" value="5" min="1">
+        <label for="boundaryFile">Hoặc tải GeoJSON</label>
+        <input id="boundaryFile" type="file" accept=".json,.geojson,application/json,application/geo+json">
+        <button id="loadBoundary" type="button" class="secondary full">Tìm địa giới</button>
+        <p id="boundaryStatus" class="muted"></p>
+      </div>
+
+      <div class="summaryline">
+        <span id="spatialSummary">Chưa chọn phạm vi không gian.</span>
+        <button id="clearSpatial" type="button" class="linkbtn">Xóa</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>4. Tùy chọn chạy</h2>
+      <div class="grid2">
+        <div>
+          <label for="zoom">Zoom</label>
+          <input id="zoom" type="number" value="15" min="1" max="21">
+        </div>
+        <div>
+          <label for="maxTime">Thời gian tối đa (giây)</label>
+          <input id="maxTime" type="number" value="600" min="180">
+        </div>
+      </div>
+      <button id="startJob" type="button" class="primary full">Bắt đầu thu thập</button>
+      <div id="jobStatus" class="status"></div>
+    </section>
+  </aside>
+
+  <main class="workspace">
+    <section class="mapcard">
+      <div class="maphead">
+        <div>
+          <h2>WebGIS</h2>
+          <p>Leaflet + OpenStreetMap · click bản đồ để chọn tâm khi ở chế độ tọa độ.</p>
+        </div>
+      </div>
+      <div id="map"></div>
+    </section>
+
+    <section class="resultcard">
+      <div class="resultshead">
+        <div>
+          <h2>Tác vụ</h2>
+          <p>Danh sách được đọc từ backend API đã cấu hình.</p>
+        </div>
+        <button id="refreshJobs" type="button" class="secondary">Làm mới</button>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tên</th>
+              <th>Trạng thái</th>
+              <th>ID</th>
+              <th>Xuất dữ liệu</th>
+            </tr>
+          </thead>
+          <tbody id="jobsBody">
+            <tr><td colspan="4" class="empty">Chưa kết nối backend.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<footer>
+  Frontend GitHub Pages của <strong>xulytiengviet/google-maps-scraper</strong>. Dữ liệu địa giới OSM/Nominatim chỉ dùng tham chiếu; hãy nạp GeoJSON chính thức khi cần ranh giới pháp lý.
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="./pages-app.js"></script>
+</body>
+</html>
