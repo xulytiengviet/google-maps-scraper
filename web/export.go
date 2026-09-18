@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -148,4 +149,65 @@ func recordsToGeoJSON(records []map[string]string) geoJSONFeatureCollection {
 	}
 
 	return fc
+}
+
+
+// ExportPaths lists the local files created for a completed job.
+type ExportPaths struct {
+	CSV     string `json:"csv"`
+	JSON    string `json:"json"`
+	GeoJSON string `json:"geojson"`
+}
+
+// MaterializeExports writes JSON and GeoJSON beside the job CSV in the
+// configured local data folder. The CSV is produced by the scraper itself.
+func (s *Service) MaterializeExports(ctx context.Context, id string) (ExportPaths, error) {
+	csvPath, err := s.GetCSV(ctx, id)
+	if err != nil {
+		return ExportPaths{}, err
+	}
+
+	records, err := readCSVAsMaps(csvPath)
+	if err != nil {
+		return ExportPaths{}, fmt.Errorf("read csv: %w", err)
+	}
+
+	jsonPath := filepath.Join(s.dataFolder, id+".json")
+	geoJSONPath := filepath.Join(s.dataFolder, id+".geojson")
+
+	jsonFile, err := os.Create(jsonPath) //nolint:gosec // path is rooted in the configured local data folder.
+	if err != nil {
+		return ExportPaths{}, fmt.Errorf("create json: %w", err)
+	}
+	jsonEncoder := json.NewEncoder(jsonFile)
+	jsonEncoder.SetIndent("", "  ")
+	encodeErr := jsonEncoder.Encode(records)
+	closeErr := jsonFile.Close()
+	if encodeErr != nil {
+		return ExportPaths{}, fmt.Errorf("write json: %w", encodeErr)
+	}
+	if closeErr != nil {
+		return ExportPaths{}, fmt.Errorf("close json: %w", closeErr)
+	}
+
+	geoFile, err := os.Create(geoJSONPath) //nolint:gosec // path is rooted in the configured local data folder.
+	if err != nil {
+		return ExportPaths{}, fmt.Errorf("create geojson: %w", err)
+	}
+	geoEncoder := json.NewEncoder(geoFile)
+	geoEncoder.SetIndent("", "  ")
+	encodeErr = geoEncoder.Encode(recordsToGeoJSON(records))
+	closeErr = geoFile.Close()
+	if encodeErr != nil {
+		return ExportPaths{}, fmt.Errorf("write geojson: %w", encodeErr)
+	}
+	if closeErr != nil {
+		return ExportPaths{}, fmt.Errorf("close geojson: %w", closeErr)
+	}
+
+	return ExportPaths{
+		CSV:     filepath.Base(csvPath),
+		JSON:    filepath.Base(jsonPath),
+		GeoJSON: filepath.Base(geoJSONPath),
+	}, nil
 }
