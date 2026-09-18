@@ -311,7 +311,36 @@ docker run \
 
 Then open http://localhost:8080 in your browser.
 
-Or download the [binary release](https://github.com/gosom/google-maps-scraper/releases) for your platform.
+#### Spatial WebGIS in this fork
+
+The `xulytiengviet/google-maps-scraper` fork adds a Vietnamese spatial workspace on top of the original Web UI. It supports:
+
+- free-text area hints;
+- Google Maps coordinates/URLs plus radius;
+- route sampling from coordinates or GeoJSON LineString;
+- commune/ward/province boundary lookup using OSM/Nominatim, or uploaded GeoJSON;
+- one deduplicated job across up to 250 spatial search centers;
+- CSV, JSON, and GeoJSON download from the same result set.
+
+To run the forked UI instead of the upstream Docker image, build this repository locally:
+
+```bash
+git clone https://github.com/xulytiengviet/google-maps-scraper.git
+cd google-maps-scraper
+
+docker build -t xulytiengviet/google-maps-scraper:local .
+
+mkdir -p gmapsdata
+docker run \
+  -v "$PWD/gmapsdata:/gmapsdata" \
+  -p 8080:8080 \
+  xulytiengviet/google-maps-scraper:local \
+  -data-folder /gmapsdata
+```
+
+Then open http://localhost:8080. The administrative boundary search is a convenience layer based on public OpenStreetMap/Nominatim geometry; use authoritative boundary GeoJSON when legal or survey-grade boundaries are required.
+
+Or download the [binary release](https://github.com/gosom/google-maps-scraper/releases) for the original upstream project.
 
 > **Note:** Results take at least 3 minutes to appear (minimum configured runtime).
 > 
@@ -328,6 +357,7 @@ When running the web server, a full REST API is available:
 | `/api/v1/jobs/{id}` | GET | Get job details |
 | `/api/v1/jobs/{id}` | DELETE | Delete a job |
 | `/api/v1/jobs/{id}/download` | GET | Download results as CSV |
+| `/api/v1/jobs/{id}/export?format=csv|json|geojson` | GET | Export the same job as CSV, JSON, or GeoJSON |
 
 Full OpenAPI 3.0.3 documentation available at http://localhost:8080/api/docs
 

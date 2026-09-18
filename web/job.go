@@ -74,8 +74,16 @@ func (j *Job) Validate() error {
 	return nil
 }
 
+// GeoPoint is a WGS84 search center used by spatial jobs.
+type GeoPoint struct {
+	Lat float64 `json:"lat"`
+	Lon float64 `json:"lon"`
+}
+
 type JobData struct {
 	Keywords     []string      `json:"keywords"`
+	Centers      []GeoPoint    `json:"centers,omitempty"`
+	GeoMode      string        `json:"geo_mode,omitempty"`
 	Lang         string        `json:"lang"`
 	Zoom         int           `json:"zoom"`
 	Lat          string        `json:"lat"`
@@ -110,7 +118,25 @@ func (d *JobData) Validate() error {
 		return errors.New("missing max time")
 	}
 
-	if d.FastMode && (d.Lat == "" || d.Lon == "") {
+	if d.GeoMode != "" {
+		switch d.GeoMode {
+		case "text", "radius", "route", "boundary":
+		default:
+			return errors.New("invalid geo mode")
+		}
+	}
+
+	if len(d.Centers) > 250 {
+		return errors.New("too many spatial centers (max 250)")
+	}
+
+	for _, p := range d.Centers {
+		if p.Lat < -90 || p.Lat > 90 || p.Lon < -180 || p.Lon > 180 {
+			return errors.New("invalid spatial center")
+		}
+	}
+
+	if d.FastMode && len(d.Centers) == 0 && (d.Lat == "" || d.Lon == "") {
 		return errors.New("missing geo coordinates")
 	}
 

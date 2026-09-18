@@ -157,6 +157,53 @@ paths:
         '500':
           description: Internal server error
 
+  /api/v1/jobs/{id}/export:
+    get:
+      summary: Export job results as CSV, JSON, or GeoJSON
+      x-code-samples:
+        - lang: curl
+          source: |
+            curl -G "http://localhost:8080/api/v1/jobs/18eafda3-53a9-4970-ac96-8f8dfc7011c3/export" \
+              --data-urlencode "format=geojson" --output results.geojson
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: format
+          in: query
+          required: false
+          description: Output format. Defaults to csv.
+          schema:
+            type: string
+            enum: [csv, json, geojson]
+            default: csv
+      responses:
+        '200':
+          description: Successful export
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties:
+                    type: string
+            application/geo+json:
+              schema:
+                type: object
+        '404':
+          description: Job output not found
+        '422':
+          description: Invalid ID or export format
+        '500':
+          description: Internal server error
+
 components:
   schemas:
     ApiError:
@@ -176,6 +223,16 @@ components:
           type: array
           items:
             type: string
+        geo_mode:
+          type: string
+          description: Spatial planning mode used by the WebGIS client.
+          enum: [text, radius, route, boundary]
+        centers:
+          type: array
+          description: Optional WGS84 search centers. Route and boundary searches are sampled into these centers.
+          maxItems: 250
+          items:
+            $ref: '#/components/schemas/GeoPoint'
         lang:
           type: string
         zoom:
@@ -198,6 +255,21 @@ components:
           type: array
           items:
             type: string
+
+    GeoPoint:
+      type: object
+      required: [lat, lon]
+      properties:
+        lat:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+        lon:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
 
     ApiScrapeResponse:
       type: object
@@ -227,6 +299,16 @@ components:
           type: array
           items:
             type: string
+        geo_mode:
+          type: string
+          description: Spatial planning mode used by the WebGIS client.
+          enum: [text, radius, route, boundary]
+        centers:
+          type: array
+          description: Optional WGS84 search centers. Route and boundary searches are sampled into these centers.
+          maxItems: 250
+          items:
+            $ref: '#/components/schemas/GeoPoint'
         lang:
           type: string
         zoom:
