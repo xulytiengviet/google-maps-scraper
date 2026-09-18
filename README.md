@@ -16,6 +16,29 @@ Extract Google Maps business leads, emails, reviews, phone numbers, websites, ra
 
 Use it for lead generation, local business research, sales prospecting, data enrichment, or developer automation.
 
+
+## Chạy trực tiếp bằng GitHub Actions
+
+Fork này có workflow **POI Scraper** để chạy thu thập trên GitHub-hosted runner, không cần VPS hay cài scraper trên PC.
+
+1. Mở **Actions → POI Scraper → Run workflow**.
+2. Dán Google Maps URL và nhập từ khóa POI.
+3. Chọn một trong ba chế độ:
+   - `radius`: bán kính quanh tọa độ đọc từ Google Maps URL;
+   - `boundary`: nhập tên xã/phường/tỉnh/thành và khoảng cách lưới;
+   - `route`: nhập ít nhất hai tọa độ, phân tách bằng dấu `;`.
+4. Chờ workflow hoàn tất.
+5. Tải artifact `poi-results-<run-number>`.
+
+Artifact gồm:
+- `results.csv`
+- `results.json`
+- `results.geojson`
+- `request.json`
+
+Workflow dựng scraper bằng Docker ngay trong runner, chỉ mở Web API trên `127.0.0.1`, tắt telemetry cho phiên chạy, và upload kết quả dưới dạng GitHub Actions artifact với thời gian lưu mặc định 7 ngày.
+
+
 ## Ask an AI Agent to Get Leads
 
 The easiest way to use Google Maps Scraper is with an AI coding agent such as [Claude Code](https://claude.com/claude-code), Codex, Cursor, GitHub Copilot, or any [Agent Skills-compatible tool](https://agentskills.io). You describe the leads you want; the agent plans the searches, runs a small validation, starts the full local scrape, monitors it, and helps you work with the results.
