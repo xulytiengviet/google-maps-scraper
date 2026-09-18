@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Công cụ trích xuất POI từ Google Map theo URL, bán kính, địa giới và tuyến">
+  <meta name="description" content="Công cụ trích xuất POI trực tiếp trên trình duyệt">
   <title>Công cụ trích xuất POI từ Google Map</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Vietflexmap/VN@6144d565fcf236727577ab3c4471bbe49f86892f/dist/vietflex.css">
   <link rel="stylesheet" href="./pages-style.css">
@@ -12,7 +12,7 @@
 <header class="topbar">
   <div>
     <h1>Công cụ trích xuất POI từ Google Map</h1>
-    <p>Dán link Google Maps, xác định vị trí, chọn phạm vi tìm kiếm và xuất dữ liệu POI sang CSV / JSON / GeoJSON.</p>
+    <p>Dán link Google Maps → chọn bán kính/địa giới/tuyến → chọn POI → bấm Trích xuất POI → tải CSV / JSON / GeoJSON ngay trên trình duyệt.</p>
   </div>
   <a class="github-link" href="https://github.com/xulytiengviet/google-maps-scraper" target="_blank" rel="noopener">GitHub</a>
 </header>
@@ -25,12 +25,8 @@
       <label for="mapsUrl">URL địa điểm Google Maps</label>
       <textarea id="mapsUrl" rows="4" spellcheck="false" placeholder="https://www.google.com/maps/place/.../@10.2694912,106.3616512,...!3d10.2702283!4d106.359458..."></textarea>
       <button id="parseUrl" type="button" class="primary full">Đọc vị trí từ URL</button>
-
       <div id="poiInfo" class="poi-info hidden">
-        <div>
-          <span class="meta-label">POI</span>
-          <strong id="poiName">Google Maps POI</strong>
-        </div>
+        <div><span class="meta-label">POI</span><strong id="poiName">Google Maps POI</strong></div>
         <div class="coord-grid">
           <div><span class="meta-label">Vĩ độ</span><code id="poiLat">—</code></div>
           <div><span class="meta-label">Kinh độ</span><code id="poiLon">—</code></div>
@@ -41,8 +37,8 @@
 
     <section class="card">
       <div class="step">BƯỚC 2</div>
-      <h2>Chọn phạm vi tìm kiếm</h2>
-      <div class="tabs scope-tabs">
+      <h2>Chọn phạm vi</h2>
+      <div class="tabs">
         <button class="tab active" data-mode="radius" type="button">Bán kính</button>
         <button class="tab" data-mode="boundary" type="button">Địa giới</button>
         <button class="tab" data-mode="route" type="button">Theo tuyến</button>
@@ -51,22 +47,22 @@
       <div class="mode active" data-panel="radius">
         <label for="radius">Bán kính quanh POI</label>
         <div class="radius-row">
-          <input id="radius" type="number" value="5000" min="100" step="100">
-          <select id="radiusPreset" aria-label="Chọn nhanh bán kính">
+          <input id="radius" type="number" value="5000" min="100" max="50000" step="100">
+          <select id="radiusPreset">
             <option value="500">500 m</option>
             <option value="1000">1 km</option>
             <option value="2000">2 km</option>
             <option value="5000" selected>5 km</option>
             <option value="10000">10 km</option>
             <option value="20000">20 km</option>
+            <option value="50000">50 km</option>
           </select>
         </div>
-        <p class="muted">Tâm tìm kiếm được lấy trực tiếp từ URL Google Maps đã dán.</p>
       </div>
 
       <div class="mode" data-panel="boundary">
-        <label for="boundaryQuery">Xã / phường / đặc khu / tỉnh / thành phố</label>
-        <input id="boundaryQuery" placeholder="VD: Bến Tre, Vĩnh Long, phường Phú Tân...">
+        <label for="boundaryQuery">Xã / phường / tỉnh / thành phố</label>
+        <input id="boundaryQuery" placeholder="VD: Bến Tre, Vĩnh Long, phường Phú Tân">
         <div class="row">
           <button id="suggestBoundary" type="button" class="secondary">Gợi ý từ POI</button>
           <button id="loadBoundary" type="button" class="secondary">Tìm địa giới</button>
@@ -87,7 +83,7 @@
       </div>
 
       <div class="summaryline">
-        <span id="spatialSummary">Chưa có vị trí. Hãy dán URL Google Maps.</span>
+        <span id="spatialSummary">Chưa có vị trí.</span>
         <button id="clearSpatial" type="button" class="linkbtn">Xóa</button>
       </div>
     </section>
@@ -95,10 +91,9 @@
     <section class="card">
       <div class="step">BƯỚC 3</div>
       <h2>Chọn POI cần tìm</h2>
-      <label for="keywords">Từ khóa / nhóm địa điểm</label>
-      <textarea id="keywords" rows="5" placeholder="Một truy vấn mỗi dòng&#10;nhà hàng&#10;quán cà phê&#10;khách sạn"></textarea>
-
-      <div class="chips" aria-label="Gợi ý từ khóa">
+      <label for="keywords">Một từ khóa mỗi dòng</label>
+      <textarea id="keywords" rows="5" placeholder="nhà hàng&#10;quán cà phê&#10;khách sạn"></textarea>
+      <div class="chips">
         <button class="chip" type="button" data-keyword="nhà hàng">Nhà hàng</button>
         <button class="chip" type="button" data-keyword="quán cà phê">Cà phê</button>
         <button class="chip" type="button" data-keyword="khách sạn">Khách sạn</button>
@@ -109,34 +104,8 @@
         <button class="chip" type="button" data-keyword="trạm xăng">Trạm xăng</button>
       </div>
 
-      <details class="advanced">
-        <summary>Tùy chọn nâng cao</summary>
-        <div class="grid2">
-          <div>
-            <label for="lang">Ngôn ngữ</label>
-            <input id="lang" value="vi" maxlength="2">
-          </div>
-          <div>
-            <label for="depth">Độ sâu</label>
-            <input id="depth" type="number" value="10" min="1">
-          </div>
-          <div>
-            <label for="zoom">Zoom</label>
-            <input id="zoom" type="number" value="15" min="1" max="21">
-          </div>
-          <div>
-            <label for="maxTime">Tối đa (giây)</label>
-            <input id="maxTime" type="number" value="600" min="180">
-          </div>
-        </div>
-        <label class="check"><input id="fetchEmail" type="checkbox"> Làm giàu email từ website công khai</label>
-        <label class="check"><input id="fastMode" type="checkbox" checked> Fast mode</label>
-      </details>
-
-      <button id="startJob" type="button" class="primary full action-button">Chạy trên GitHub Actions</button>
+      <button id="startJob" type="button" class="primary full action-button">Trích xuất POI</button>
       <div id="jobStatus" class="status"></div>
-      <textarea id="actionConfig" class="action-config hidden" rows="9" readonly aria-label="Cấu hình GitHub Actions"></textarea>
-      <p class="muted"><strong>GitHub Mode:</strong> Không cần cài phần mềm hay cấu hình máy chủ. Nút trên sẽ sao chép cấu hình hiện tại và mở workflow <code>POI Scraper</code>; chạy workflow để nhận artifact chứa CSV / JSON / GeoJSON.</p>
     </section>
   </aside>
 
@@ -144,8 +113,8 @@
     <section class="mapcard">
       <div class="maphead">
         <div>
-          <h2>Phạm vi thu thập POI</h2>
-          <p>Vietflex Map + Google Roadmap. Điểm đỏ là tâm/lưới tìm kiếm.</p>
+          <h2>Phạm vi & kết quả</h2>
+          <p>Vietflex Map hiển thị vùng tìm kiếm và các POI trả về.</p>
         </div>
         <span id="mapBadge" class="map-badge">Chưa có vị trí</span>
       </div>
@@ -155,14 +124,27 @@
     <section class="resultcard">
       <div class="resultshead">
         <div>
-          <h2>Chạy bằng GitHub Actions</h2>
-          <p>Runner GitHub thực hiện thu thập và đóng gói kết quả thành artifact.</p>
+          <h2>Kết quả POI</h2>
+          <p id="resultSummary">Chưa có dữ liệu.</p>
+        </div>
+        <div class="actions">
+          <button id="exportCsv" type="button" class="secondary" disabled>CSV</button>
+          <button id="exportJson" type="button" class="secondary" disabled>JSON</button>
+          <button id="exportGeoJson" type="button" class="secondary" disabled>GeoJSON</button>
         </div>
       </div>
-      <div class="local-mode-guide">
-        <p><strong>Luồng:</strong> chuẩn bị phạm vi tại trang này → bấm <strong>Chạy trên GitHub Actions</strong> → dán các tham số đã sao chép vào <strong>Run workflow</strong> → tải artifact <code>poi-results-&lt;run-number&gt;</code>.</p>
-        <p>Artifact gồm <code>results.csv</code>, <code>results.json</code>, <code>results.geojson</code> và <code>request.json</code>.</p>
-        <a class="local-download-button" href="https://github.com/xulytiengviet/google-maps-scraper/actions/workflows/poi-scraper.yml" target="_blank" rel="noopener">Mở POI Scraper Workflow</a>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tên</th><th>Loại</th><th>Địa chỉ</th><th>Điện thoại</th>
+              <th>Website</th><th>Rating</th><th>Reviews</th><th>Lat</th><th>Lon</th>
+            </tr>
+          </thead>
+          <tbody id="resultsBody">
+            <tr><td colspan="9" class="empty">Chưa có dữ liệu.</td></tr>
+          </tbody>
+        </table>
       </div>
     </section>
   </main>
@@ -171,6 +153,7 @@
 <footer>Giấy phép MIT · Long Ngo phát triển · Sử dụng phục vụ học tập và nghiên cứu.</footer>
 
 <script src="https://cdn.jsdelivr.net/gh/Vietflexmap/VN@6144d565fcf236727577ab3c4471bbe49f86892f/dist/vietflex.js"></script>
+<script src="./config.js"></script>
 <script src="./pages-app.js"></script>
 </body>
 </html>
