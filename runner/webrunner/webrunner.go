@@ -189,25 +189,46 @@ func (w *webrunner) scrapeJob(ctx context.Context, job *web.Job) error {
 	dedup := deduper.New()
 	exitMonitor := exiter.New()
 
-	seedJobs, err := runner.CreateSeedJobs(
-		job.Data.FastMode,
-		job.Data.Lang,
-		strings.NewReader(strings.Join(job.Data.Keywords, "\n")),
-		job.Data.Depth,
-		job.Data.Email,
-		coords,
-		job.Data.Zoom,
-		func() float64 {
-			if job.Data.Radius <= 0 {
-				return 10000 // 10 km
-			}
+	var seedJobs []scrapemate.IJob
 
-			return float64(job.Data.Radius)
-		}(),
-		dedup,
-		exitMonitor,
-		w.cfg.ExtraReviews || job.Data.ExtraReviews,
-	)
+	createAt := func(centerCoords string) error {
+		created, createErr := runner.CreateSeedJobs(
+			job.Data.FastMode,
+			job.Data.Lang,
+			strings.NewReader(strings.Join(job.Data.Keywords, "\n")),
+			job.Data.Depth,
+			job.Data.Email,
+			centerCoords,
+			job.Data.Zoom,
+			func() float64 {
+				if job.Data.Radius <= 0 {
+					return 10000 // 10 km
+				}
+
+				return float64(job.Data.Radius)
+			}(),
+			dedup,
+			exitMonitor,
+			w.cfg.ExtraReviews || job.Data.ExtraReviews,
+		)
+		if createErr != nil {
+			return createErr
+		}
+
+		seedJobs = append(seedJobs, created...)
+		return nil
+	}
+
+	if len(job.Data.Centers) == 0 {
+		err = createAt(coords)
+	} else {
+		for _, center := range job.Data.Centers {
+			centerCoords := fmt.Sprintf("%.7f,%.7f", center.Lat, center.Lon)
+			if err = createAt(centerCoords); err != nil {
+				break
+			}
+		}
+	}
 	if err != nil {
 		err2 := w.svc.Update(ctx, job)
 		if err2 != nil {
