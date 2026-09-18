@@ -19,9 +19,6 @@ new Vietflex.ZoomControl({position:'topleft'}).addTo(map);
 new Vietflex.AttributionControl({position:'bottomright'}).addTo(map);
 const overlay=new Vietflex.LayerGroup().addTo(map);
 
-function apiBase(){
-  return ($('apiBase').value||localStorage.getItem('gmapsApiBase')||'').trim().replace(/\/$/,'');
-}
 function setStatus(el,msg,type){
   el.textContent=msg||'';
   el.className='status'+(type?' '+type:'');
@@ -367,26 +364,6 @@ document.querySelectorAll('.chip').forEach(btn=>btn.addEventListener('click',()=
   $('keywords').value=current.join('\n');
 }));
 
-$('saveApi').onclick=()=>{
-  const b=apiBase();
-  if(!b){setStatus($('apiStatus'),'Hãy nhập URL backend HTTPS.','warn');return;}
-  localStorage.setItem('gmapsApiBase',b);
-  $('apiBase').value=b;
-  setStatus($('apiStatus'),'Đã lưu backend trên trình duyệt này.','ok');
-};
-$('testApi').onclick=async()=>{
-  const b=apiBase();
-  if(!b){setStatus($('apiStatus'),'Chưa cấu hình backend.','warn');return;}
-  setStatus($('apiStatus'),'Đang kiểm tra…');
-  try{
-    const r=await fetch(b+'/api/v1/jobs');
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    setStatus($('apiStatus'),'Kết nối API thành công.','ok');
-    await loadJobs();
-  }catch(e){
-    setStatus($('apiStatus'),'Không kết nối được: '+e.message,'error');
-  }
-};
 
 function buildPayload(){
   const qs=$('keywords').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
@@ -424,64 +401,11 @@ function buildPayload(){
   };
 }
 
-$('startJob').onclick=async()=>{
-  const b=apiBase();
-  if(!b){
-    setStatus($('jobStatus'),'Chưa cấu hình máy chủ thu thập dữ liệu. Mở “Cấu hình máy chủ thu thập dữ liệu” và nhập URL backend.','warn');
-    return;
-  }
-  try{
-    const payload=buildPayload();
-    setStatus($('jobStatus'),'Đang tạo tác vụ thu thập POI…');
-    const r=await fetch(b+'/api/v1/jobs',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(payload)
-    });
-    const d=await r.json().catch(()=>({}));
-    if(!r.ok)throw new Error(d.message||('HTTP '+r.status));
-    setStatus($('jobStatus'),'Đã tạo tác vụ '+(d.id||'')+'.','ok');
-    await loadJobs();
-  }catch(e){
-    setStatus($('jobStatus'),e.message,'error');
-  }
+$('startJob').onclick=()=>{
+  const msg='Chế độ thu thập chạy cục bộ trên PC. Không cần Backend API URL. Tải repository về máy, chạy START_LOCAL_WINDOWS.bat, chọn thư mục lưu rồi sử dụng giao diện local.';
+  setStatus($('jobStatus'),msg,'ok');
+  window.open('https://github.com/xulytiengviet/google-maps-scraper','_blank','noopener');
 };
 
-async function loadJobs(){
-  const b=apiBase();
-  if(!b){
-    $('jobsBody').innerHTML='<tr><td colspan="4" class="empty">Chưa cấu hình máy chủ thu thập dữ liệu.</td></tr>';
-    return;
-  }
-  try{
-    const r=await fetch(b+'/api/v1/jobs');
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    const raw=await r.json();
-    const jobs=Array.isArray(raw)?raw:(raw.jobs||[]);
-    if(!jobs.length){
-      $('jobsBody').innerHTML='<tr><td colspan="4" class="empty">Chưa có tác vụ.</td></tr>';
-      return;
-    }
-    $('jobsBody').innerHTML=jobs.slice(0,50).map(j=>{
-      const id=escapeHtml(j.ID||j.id);
-      const name=escapeHtml(j.Name||j.name||'POI search');
-      const st=escapeHtml(j.Status||j.status||'unknown');
-      return '<tr><td>'+name+'</td><td><span class="pill '+st+'">'+st+'</span></td><td><code>'+id+'</code></td><td><div class="actions">'+
-        '<a href="'+b+'/api/v1/jobs/'+id+'/export?format=csv">CSV</a>'+
-        '<a href="'+b+'/api/v1/jobs/'+id+'/export?format=json">JSON</a>'+
-        '<a href="'+b+'/api/v1/jobs/'+id+'/export?format=geojson">GeoJSON</a>'+
-        '</div></td></tr>';
-    }).join('');
-  }catch(e){
-    $('jobsBody').innerHTML='<tr><td colspan="4" class="empty">Lỗi API: '+escapeHtml(e.message)+'</td></tr>';
-  }
-}
-$('refreshJobs').onclick=loadJobs;
-
-const stored=localStorage.getItem('gmapsApiBase');
-if(stored){
-  $('apiBase').value=stored;
-  loadJobs();
-}
 setMode('radius');
 })();
