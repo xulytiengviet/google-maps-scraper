@@ -402,7 +402,7 @@ function buildPayload(){
 }
 
 $('startJob').onclick=()=>{
-  const msg='Chế độ thu thập chạy cục bộ trên PC. Không cần Backend API URL. Tải repository về máy, chạy START_LOCAL_WINDOWS.bat, chọn thư mục lưu rồi sử dụng giao diện local.';
+  const msg='Chế độ thu thập chạy cục bộ trên PC. Tải repository về máy, chạy START_LOCAL_WINDOWS.bat, chọn thư mục lưu rồi sử dụng giao diện local.';
   setStatus($('jobStatus'),msg,'ok');
   window.open('https://github.com/xulytiengviet/google-maps-scraper','_blank','noopener');
 };
