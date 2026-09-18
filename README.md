@@ -17,26 +17,11 @@ Extract Google Maps business leads, emails, reviews, phone numbers, websites, ra
 Use it for lead generation, local business research, sales prospecting, data enrichment, or developer automation.
 
 
-## Chạy trực tiếp bằng GitHub Actions
+## Browser-only POI mode
 
-Fork này có workflow **POI Scraper** để chạy thu thập trên GitHub-hosted runner, không cần VPS hay cài scraper trên PC.
+Trang GitHub Pages của fork này được định hướng chạy trực tiếp trong trình duyệt bằng **Google Maps JavaScript API + Places API (New)**. Chủ repository cấu hình một browser API key được giới hạn theo HTTP referrer một lần; người dùng cuối chỉ cần dán Google Maps URL, chọn phạm vi/từ khóa và bấm **Trích xuất POI** để xem kết quả và tải CSV / JSON / GeoJSON.
 
-1. Mở **Actions → POI Scraper → Run workflow**.
-2. Dán Google Maps URL và nhập từ khóa POI.
-3. Chọn một trong ba chế độ:
-   - `radius`: bán kính quanh tọa độ đọc từ Google Maps URL;
-   - `boundary`: nhập tên xã/phường/tỉnh/thành và khoảng cách lưới;
-   - `route`: nhập ít nhất hai tọa độ, phân tách bằng dấu `;`.
-4. Chờ workflow hoàn tất.
-5. Tải artifact `poi-results-<run-number>`.
-
-Artifact gồm:
-- `results.csv`
-- `results.json`
-- `results.geojson`
-- `request.json`
-
-Workflow dựng scraper bằng Docker ngay trong runner, chỉ mở Web API trên `127.0.0.1`, tắt telemetry cho phiên chạy, và upload kết quả dưới dạng GitHub Actions artifact với thời gian lưu mặc định 7 ngày.
+Không dùng GitHub Actions runner cho luồng người dùng này.
 
 
 ## Ask an AI Agent to Get Leads
