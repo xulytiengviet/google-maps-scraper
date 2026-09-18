@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Google Maps Spatial Data Explorer - WebGIS frontend for xulytiengviet/google-maps-scraper">
+  <meta name="description" content="Công cụ trích xuất POI từ Google Map theo URL, bán kính, địa giới và tuyến">
   <title>Công cụ trích xuất POI từ Google Map</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Vietflexmap/VN@6144d565fcf236727577ab3c4471bbe49f86892f/dist/vietflex.css">
   <link rel="stylesheet" href="./pages-style.css">
@@ -12,136 +12,153 @@
 <header class="topbar">
   <div>
     <h1>Công cụ trích xuất POI từ Google Map</h1>
-    <p>Tìm kiếm và trích xuất điểm quan tâm (POI) theo chủ đề, tọa độ, bán kính, tuyến và địa giới; xuất CSV / JSON / GeoJSON.</p>
+    <p>Dán link Google Maps, xác định vị trí, chọn phạm vi tìm kiếm và xuất dữ liệu POI sang CSV / JSON / GeoJSON.</p>
   </div>
-  <div class="toplinks">
-    <a href="https://github.com/xulytiengviet/google-maps-scraper" target="_blank" rel="noopener">GitHub</a>
-  </div>
+  <a class="github-link" href="https://github.com/xulytiengviet/google-maps-scraper" target="_blank" rel="noopener">GitHub</a>
 </header>
 
 <div class="layout">
   <aside class="controls">
-    <section class="card">
-      <h2>1. Backend API</h2>
-      <label for="apiBase">URL máy chủ scraper</label>
-      <input id="apiBase" type="url" placeholder="VD: https://maps-api.tenmiencuaban.vn">
-      <div class="row">
-        <button id="saveApi" type="button">Lưu API</button>
-        <button id="testApi" type="button" class="secondary">Kiểm tra</button>
+    <section class="card hero-card">
+      <div class="step">BƯỚC 1</div>
+      <h2>Dán link Google Maps</h2>
+      <label for="mapsUrl">URL địa điểm Google Maps</label>
+      <textarea id="mapsUrl" rows="4" spellcheck="false" placeholder="https://www.google.com/maps/place/.../@10.2694912,106.3616512,...!3d10.2702283!4d106.359458..."></textarea>
+      <button id="parseUrl" type="button" class="primary full">Đọc vị trí từ URL</button>
+
+      <div id="poiInfo" class="poi-info hidden">
+        <div>
+          <span class="meta-label">POI</span>
+          <strong id="poiName">Google Maps POI</strong>
+        </div>
+        <div class="coord-grid">
+          <div><span class="meta-label">Vĩ độ</span><code id="poiLat">—</code></div>
+          <div><span class="meta-label">Kinh độ</span><code id="poiLon">—</code></div>
+        </div>
       </div>
-      <p class="muted">
-        URL này là địa chỉ HTTPS của backend chạy <strong>google-maps-scraper</strong>. 
-        Anh có thể lấy URL sau khi triển khai backend lên VPS/server riêng, Render, Fly.io, Railway, Google Cloud Run hoặc dịch vụ tương đương.
-        Ví dụ: <code>https://maps-api.tenmiencuaban.vn</code> hoặc URL HTTPS do nền tảng triển khai cung cấp.
-      </p>
-      <p class="muted"><strong>Notes:</strong> URL API chỉ được lưu trên trình duyệt cá nhân của anh bằng Local Storage, không được ghi vào repository hay gửi lên GitHub Pages.</p>
-      <div id="apiStatus" class="status"></div>
+      <div id="urlStatus" class="status"></div>
     </section>
 
     <section class="card">
-      <h2>2. Nội dung cần lấy</h2>
-      <label for="jobName">Tên tác vụ</label>
-      <input id="jobName" type="text" placeholder="VD: Nhà hàng Vĩnh Long">
-
-      <label for="keywords">Chủ đề / tên / số điện thoại / email / địa chỉ</label>
-      <textarea id="keywords" rows="6" placeholder="Một truy vấn mỗi dòng&#10;nhà hàng hải sản&#10;khách sạn&#10;0290 3xx xxxx"></textarea>
-
-      <div class="grid2">
-        <div>
-          <label for="lang">Ngôn ngữ</label>
-          <input id="lang" value="vi" maxlength="2">
-        </div>
-        <div>
-          <label for="depth">Độ sâu</label>
-          <input id="depth" type="number" value="10" min="1">
-        </div>
-      </div>
-
-      <label class="check"><input id="fetchEmail" type="checkbox"> Làm giàu email từ website công khai</label>
-      <label class="check"><input id="fastMode" type="checkbox" checked> Fast mode</label>
-    </section>
-
-    <section class="card">
-      <h2>3. Phạm vi không gian</h2>
-      <div class="tabs">
-        <button class="tab active" data-mode="text" type="button">Khu vực chữ</button>
-        <button class="tab" data-mode="radius" type="button">Tọa độ</button>
-        <button class="tab" data-mode="route" type="button">Tuyến</button>
+      <div class="step">BƯỚC 2</div>
+      <h2>Chọn phạm vi tìm kiếm</h2>
+      <div class="tabs scope-tabs">
+        <button class="tab active" data-mode="radius" type="button">Bán kính</button>
         <button class="tab" data-mode="boundary" type="button">Địa giới</button>
+        <button class="tab" data-mode="route" type="button">Theo tuyến</button>
       </div>
 
-      <div class="mode active" data-panel="text">
-        <label for="areaHint">Khu vực / địa chỉ bổ sung</label>
-        <input id="areaHint" placeholder="VD: phường Phước Hậu, Vĩnh Long">
-      </div>
-
-      <div class="mode" data-panel="radius">
-        <label for="mapsLocation">Tọa độ hoặc URL Google Maps</label>
-        <input id="mapsLocation" placeholder="10.2537,105.9722 hoặc URL Google Maps">
-        <div class="grid2">
-          <div>
-            <label for="lat">Vĩ độ</label>
-            <input id="lat" type="number" step="0.0000001">
-          </div>
-          <div>
-            <label for="lon">Kinh độ</label>
-            <input id="lon" type="number" step="0.0000001">
-          </div>
+      <div class="mode active" data-panel="radius">
+        <label for="radius">Bán kính quanh POI</label>
+        <div class="radius-row">
+          <input id="radius" type="number" value="5000" min="100" step="100">
+          <select id="radiusPreset" aria-label="Chọn nhanh bán kính">
+            <option value="500">500 m</option>
+            <option value="1000">1 km</option>
+            <option value="2000">2 km</option>
+            <option value="5000" selected>5 km</option>
+            <option value="10000">10 km</option>
+            <option value="20000">20 km</option>
+          </select>
         </div>
-        <label for="radius">Bán kính (m)</label>
-        <input id="radius" type="number" value="5000" min="100" step="100">
-        <button id="parseLocation" type="button" class="secondary full">Đọc tọa độ</button>
-      </div>
-
-      <div class="mode" data-panel="route">
-        <label for="routeInput">Danh sách tọa độ / Google Maps URL / GeoJSON LineString</label>
-        <textarea id="routeInput" rows="5" placeholder="10.2537,105.9722&#10;10.3000,106.0000&#10;10.3500,106.0500"></textarea>
-        <label for="routeSpacing">Khoảng cách lấy mẫu dọc tuyến (km)</label>
-        <input id="routeSpacing" type="number" value="3" min="0.5" step="0.5">
-        <button id="buildRoute" type="button" class="secondary full">Tạo điểm theo tuyến</button>
+        <p class="muted">Tâm tìm kiếm được lấy trực tiếp từ URL Google Maps đã dán.</p>
       </div>
 
       <div class="mode" data-panel="boundary">
-        <label for="boundaryQuery">Tên xã/phường/tỉnh</label>
-        <input id="boundaryQuery" placeholder="VD: phường Phước Hậu, Vĩnh Long">
-        <label for="boundarySpacing">Lưới lấy mẫu (km)</label>
-        <input id="boundarySpacing" type="number" value="5" min="1">
-        <label for="boundaryFile">Hoặc tải GeoJSON</label>
+        <label for="boundaryQuery">Xã / phường / đặc khu / tỉnh / thành phố</label>
+        <input id="boundaryQuery" placeholder="VD: Bến Tre, Vĩnh Long, phường Phú Tân...">
+        <div class="row">
+          <button id="suggestBoundary" type="button" class="secondary">Gợi ý từ POI</button>
+          <button id="loadBoundary" type="button" class="secondary">Tìm địa giới</button>
+        </div>
+        <label for="boundarySpacing">Khoảng cách lưới lấy mẫu (km)</label>
+        <input id="boundarySpacing" type="number" value="5" min="1" step="1">
+        <label for="boundaryFile">Hoặc nạp GeoJSON địa giới</label>
         <input id="boundaryFile" type="file" accept=".json,.geojson,application/json,application/geo+json">
-        <button id="loadBoundary" type="button" class="secondary full">Tìm địa giới</button>
         <p id="boundaryStatus" class="muted"></p>
       </div>
 
+      <div class="mode" data-panel="route">
+        <label for="routeInput">Danh sách tọa độ hoặc GeoJSON LineString</label>
+        <textarea id="routeInput" rows="5" placeholder="10.2702283,106.359458&#10;10.3000000,106.4000000"></textarea>
+        <label for="routeSpacing">Khoảng cách lấy mẫu dọc tuyến (km)</label>
+        <input id="routeSpacing" type="number" value="3" min="0.5" step="0.5">
+        <button id="buildRoute" type="button" class="secondary full">Tạo phạm vi theo tuyến</button>
+      </div>
+
       <div class="summaryline">
-        <span id="spatialSummary">Chưa chọn phạm vi không gian.</span>
+        <span id="spatialSummary">Chưa có vị trí. Hãy dán URL Google Maps.</span>
         <button id="clearSpatial" type="button" class="linkbtn">Xóa</button>
       </div>
     </section>
 
     <section class="card">
-      <h2>4. Tùy chọn chạy</h2>
-      <div class="grid2">
-        <div>
-          <label for="zoom">Zoom</label>
-          <input id="zoom" type="number" value="15" min="1" max="21">
-        </div>
-        <div>
-          <label for="maxTime">Thời gian tối đa (giây)</label>
-          <input id="maxTime" type="number" value="600" min="180">
-        </div>
+      <div class="step">BƯỚC 3</div>
+      <h2>Chọn POI cần tìm</h2>
+      <label for="keywords">Từ khóa / nhóm địa điểm</label>
+      <textarea id="keywords" rows="5" placeholder="Một truy vấn mỗi dòng&#10;nhà hàng&#10;quán cà phê&#10;khách sạn"></textarea>
+
+      <div class="chips" aria-label="Gợi ý từ khóa">
+        <button class="chip" type="button" data-keyword="nhà hàng">Nhà hàng</button>
+        <button class="chip" type="button" data-keyword="quán cà phê">Cà phê</button>
+        <button class="chip" type="button" data-keyword="khách sạn">Khách sạn</button>
+        <button class="chip" type="button" data-keyword="trường học">Trường học</button>
+        <button class="chip" type="button" data-keyword="bệnh viện">Bệnh viện</button>
+        <button class="chip" type="button" data-keyword="nhà thuốc">Nhà thuốc</button>
+        <button class="chip" type="button" data-keyword="ngân hàng">Ngân hàng</button>
+        <button class="chip" type="button" data-keyword="trạm xăng">Trạm xăng</button>
       </div>
-      <button id="startJob" type="button" class="primary full">Bắt đầu thu thập</button>
+
+      <details class="advanced">
+        <summary>Tùy chọn nâng cao</summary>
+        <div class="grid2">
+          <div>
+            <label for="lang">Ngôn ngữ</label>
+            <input id="lang" value="vi" maxlength="2">
+          </div>
+          <div>
+            <label for="depth">Độ sâu</label>
+            <input id="depth" type="number" value="10" min="1">
+          </div>
+          <div>
+            <label for="zoom">Zoom</label>
+            <input id="zoom" type="number" value="15" min="1" max="21">
+          </div>
+          <div>
+            <label for="maxTime">Tối đa (giây)</label>
+            <input id="maxTime" type="number" value="600" min="180">
+          </div>
+        </div>
+        <label class="check"><input id="fetchEmail" type="checkbox"> Làm giàu email từ website công khai</label>
+        <label class="check"><input id="fastMode" type="checkbox" checked> Fast mode</label>
+      </details>
+
+      <button id="startJob" type="button" class="primary full action-button">Bắt đầu thu thập POI</button>
       <div id="jobStatus" class="status"></div>
     </section>
+
+    <details class="card api-card">
+      <summary>Cấu hình máy chủ thu thập dữ liệu</summary>
+      <p class="muted">Chỉ cần cấu hình một lần. Đây không phải URL Google Maps.</p>
+      <label for="apiBase">Backend API HTTPS</label>
+      <input id="apiBase" type="url" placeholder="https://maps-api.tenmiencuaban.vn">
+      <div class="row">
+        <button id="saveApi" type="button">Lưu API</button>
+        <button id="testApi" type="button" class="secondary">Kiểm tra</button>
+      </div>
+      <p class="muted"><strong>Notes:</strong> URL API chỉ lưu trên trình duyệt cá nhân bằng Local Storage.</p>
+      <div id="apiStatus" class="status"></div>
+    </details>
   </aside>
 
   <main class="workspace">
     <section class="mapcard">
       <div class="maphead">
         <div>
-          <h2>WebGIS</h2>
-          <p>Vietflex Map + Google Roadmap · click bản đồ để chọn tâm khi ở chế độ tọa độ.</p>
+          <h2>Phạm vi thu thập POI</h2>
+          <p>Vietflex Map + Google Roadmap. Điểm đỏ là tâm/lưới tìm kiếm.</p>
         </div>
+        <span id="mapBadge" class="map-badge">Chưa có vị trí</span>
       </div>
       <div id="map"></div>
     </section>
@@ -149,8 +166,8 @@
     <section class="resultcard">
       <div class="resultshead">
         <div>
-          <h2>Tác vụ</h2>
-          <p>Danh sách được đọc từ backend API đã cấu hình.</p>
+          <h2>Kết quả tác vụ</h2>
+          <p>Xuất dữ liệu sau khi backend hoàn tất thu thập.</p>
         </div>
         <button id="refreshJobs" type="button" class="secondary">Làm mới</button>
       </div>
@@ -158,14 +175,14 @@
         <table>
           <thead>
             <tr>
-              <th>Tên</th>
+              <th>Tác vụ</th>
               <th>Trạng thái</th>
               <th>ID</th>
               <th>Xuất dữ liệu</th>
             </tr>
           </thead>
           <tbody id="jobsBody">
-            <tr><td colspan="4" class="empty">Chưa kết nối backend.</td></tr>
+            <tr><td colspan="4" class="empty">Chưa có tác vụ.</td></tr>
           </tbody>
         </table>
       </div>
@@ -173,9 +190,7 @@
   </main>
 </div>
 
-<footer>
-  Giấy phép MIT · Long Ngo phát triển · Sử dụng phục vụ học tập và nghiên cứu.
-</footer>
+<footer>Giấy phép MIT · Long Ngo phát triển · Sử dụng phục vụ học tập và nghiên cứu.</footer>
 
 <script src="https://cdn.jsdelivr.net/gh/Vietflexmap/VN@6144d565fcf236727577ab3c4471bbe49f86892f/dist/vietflex.js"></script>
 <script src="./pages-app.js"></script>
