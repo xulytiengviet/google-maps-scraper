@@ -271,3 +271,7 @@ footer{
   #map{height:380px}
   .maphead,.resultshead{align-items:flex-start;flex-direction:column}
 }
+.local-mode-guide{padding:16px;line-height:1.55;color:var(--text)}
+.local-mode-guide p{margin:0 0 10px}
+.local-download-button{display:inline-block;text-decoration:none;background:var(--primary);color:#fff;border-radius:8px;padding:10px 12px;font-weight:700}
+.local-download-button:hover{filter:brightness(.96)}
