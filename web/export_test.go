@@ -3,6 +3,7 @@ package web
 
 import (
 	"testing"
+	"time"
 )
 
 func TestRecordsToGeoJSON(t *testing.T) {
@@ -58,8 +59,9 @@ func TestJobDataValidateSpatialCenters(t *testing.T) {
 		Keywords: []string{"coffee"},
 		Lang:     "vi",
 		Depth:    10,
-		MaxTime:  180000000000,
+		MaxTime:  3 * time.Minute,
 		FastMode: true,
+		GeoMode:  "radius",
 		Centers: []GeoPoint{
 			{Lat: 10.25, Lon: 105.97},
 		},
