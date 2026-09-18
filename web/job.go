@@ -74,6 +74,7 @@ func (j *Job) Validate() error {
 	return nil
 }
 
+// GeoPoint is a WGS84 search center used by spatial jobs.
 type GeoPoint struct {
 	Lat float64 `json:"lat"`
 	Lon float64 `json:"lon"`
@@ -115,6 +116,14 @@ func (d *JobData) Validate() error {
 
 	if d.MaxTime == 0 {
 		return errors.New("missing max time")
+	}
+
+	if d.GeoMode != "" {
+		switch d.GeoMode {
+		case "text", "radius", "route", "boundary":
+		default:
+			return errors.New("invalid geo mode")
+		}
 	}
 
 	if len(d.Centers) > 250 {
