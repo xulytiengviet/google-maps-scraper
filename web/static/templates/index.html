@@ -1,161 +1,208 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Maps Scraper</title>
+    <title>Google Maps Spatial Data Explorer</title>
     <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/1.9.6/htmx.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 </head>
-<body>
-    <div class="app-container">
-        <header>
-            <h1>Google Maps Scraper</h1>
-            <nav>
-                <a href="/api/docs" target="_blank" rel="noopener noreferrer">API Documentation</a>
-            </nav>
-            <div class="github-section">
-                <p>If you find this tool useful, please consider starring our repository: </p>
-                <a href="https://github.com/gosom/google-maps-scraper" class="github-button">
-                <svg height="16" width="16" viewBox="0 0 16 16">
-                    <path fill="currentColor" d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25z"/>
-                  </svg>
-                  Star on GitHub
-                </a>
-            </div>
-            <div id="sponsor-section" class="sponsor-section">
-    <button class="sponsor-close" onclick="hideSponsor()">
-        ×
-    </button>
-    <p class="sponsor-text">Support the ongoing maintenance and development of this project by becoming a sponsor. Your contribution helps ensure the tool's continued improvement and reliability.</p>
-    <a href="https://github.com/sponsors/gosom" class="sponsor-button" target="_blank" rel="noopener noreferrer">
-        <svg height="16" width="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M4.25 2.5C4.25 1.83696 4.67143 1.25 5.25 1.25C5.82857 1.25 6.25 1.83696 6.25 2.5C6.25 3.16304 5.82857 3.75 5.25 3.75C4.67143 3.75 4.25 3.16304 4.25 2.5ZM2.5 3.75C1.92143 3.75 1.5 3.16304 1.5 2.5C1.5 1.83696 1.92143 1.25 2.5 1.25C3.07857 1.25 3.5 1.83696 3.5 2.5C3.5 3.16304 3.07857 3.75 2.5 3.75ZM8 1.25C7.42143 1.25 7 1.83696 7 2.5C7 3.16304 7.42143 3.75 8 3.75C8.57857 3.75 9 3.16304 9 2.5C9 1.83696 8.57857 1.25 8 1.25ZM10.75 2.5C10.75 1.83696 11.1714 1.25 11.75 1.25C12.3286 1.25 12.75 1.83696 12.75 2.5C12.75 3.16304 12.3286 3.75 11.75 3.75C11.1714 3.75 10.75 3.16304 10.75 2.5ZM14.5 1.25C13.9214 1.25 13.5 1.83696 13.5 2.5C13.5 3.16304 13.9214 3.75 14.5 3.75C15.0786 3.75 15.5 3.16304 15.5 2.5C15.5 1.83696 15.0786 1.25 14.5 1.25ZM1.25 5.25C1.25 4.67143 1.83696 4.25 2.5 4.25C3.16304 4.25 3.75 4.67143 3.75 5.25C3.75 5.82857 3.16304 6.25 2.5 6.25C1.83696 6.25 1.25 5.82857 1.25 5.25ZM5.25 4.25C4.67143 4.25 4.25 4.67143 4.25 5.25C4.25 5.82857 4.67143 6.25 5.25 6.25C5.82857 6.25 6.25 5.82857 6.25 5.25C6.25 4.67143 5.82857 4.25 5.25 4.25ZM7 5.25C7 4.67143 7.42143 4.25 8 4.25C8.57857 4.25 9 4.67143 9 5.25C9 5.82857 8.57857 6.25 8 6.25C7.42143 6.25 7 5.82857 7 5.25ZM11.75 4.25C11.1714 4.25 10.75 4.67143 10.75 5.25C10.75 5.82857 11.1714 6.25 11.75 6.25C12.3286 6.25 12.75 5.82857 12.75 5.25C12.75 4.67143 12.3286 4.25 11.75 4.25ZM13.5 5.25C13.5 4.67143 13.9214 4.25 14.5 4.25C15.0786 4.25 15.5 4.67143 15.5 5.25C15.5 5.82857 15.0786 6.25 14.5 6.25C13.9214 6.25 13.5 5.82857 13.5 5.25ZM2.5 7.25C1.83696 7.25 1.25 7.67143 1.25 8.25C1.25 8.82857 1.83696 9.25 2.5 9.25C3.16304 9.25 3.75 8.82857 3.75 8.25C3.75 7.67143 3.16304 7.25 2.5 7.25ZM4.25 8.25C4.25 7.67143 4.67143 7.25 5.25 7.25C5.82857 7.25 6.25 7.67143 6.25 8.25C6.25 8.82857 5.82857 9.25 5.25 9.25C4.67143 9.25 4.25 8.82857 4.25 8.25ZM8 7.25C7.42143 7.25 7 7.67143 7 8.25C7 8.82857 7.42143 9.25 8 9.25C8.57857 9.25 9 8.82857 9 8.25C9 7.67143 8.57857 7.25 8 7.25ZM10.75 8.25C10.75 7.67143 11.1714 7.25 11.75 7.25C12.3286 7.25 12.75 7.67143 12.75 8.25C12.75 8.82857 12.3286 9.25 11.75 9.25C11.1714 9.25 10.75 8.82857 10.75 8.25ZM14.5 7.25C13.9214 7.25 13.5 7.67143 13.5 8.25C13.5 8.82857 13.9214 9.25 14.5 9.25C15.0786 9.25 15.5 8.82857 15.5 8.25C15.5 7.67143 15.0786 7.25 14.5 7.25Z" fill="currentColor"/>
-        </svg>
-        Sponsor on GitHub
-    </a>
-</div>
+<body class="spatial-app">
+<div class="app-container">
+    <header class="spatial-header">
+        <div>
+            <h1>Google Maps Spatial Data Explorer</h1>
+            <p class="header-subtitle">Tìm địa điểm công khai theo từ khóa, tọa độ, bán kính, tuyến hoặc địa giới hành chính; xuất CSV / JSON / GeoJSON.</p>
+        </div>
+        <nav class="header-actions">
+            <a href="/api/docs" target="_blank" rel="noopener noreferrer">REST API</a>
+            <a href="https://github.com/xulytiengviet/google-maps-scraper" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </nav>
+    </header>
 
-        </header>
-        <main>
-            <div class="sidebar">
-                <div id="error-container" class="error-message"></div>
-                <form 
-                    hx-post="/scrape" 
-                    hx-target="#job-tbody"
-                    hx-swap="outerHTML"
-                    hx-indicator="#spinner"
-                    hx-on::before-request="document.getElementById('error-container').innerHTML = ''"
-                    hx-on::after-request="if(!event.detail.successful) document.getElementById('error-container').innerHTML = event.detail.xhr.responseText"
-                >
-                    
-                    <fieldset>
-                        <legend>Job Details</legend>
+    <main class="spatial-main">
+        <aside class="spatial-sidebar">
+            <div id="error-container" class="error-message"></div>
+
+            <form id="spatial-search-form"
+                  hx-post="/scrape"
+                  hx-target="#job-tbody"
+                  hx-swap="outerHTML"
+                  hx-indicator="#spinner"
+                  hx-on::before-request="document.getElementById('error-container').innerHTML=''"
+                  hx-on::after-request="if(!event.detail.successful) document.getElementById('error-container').innerHTML=event.detail.xhr.responseText">
+
+                <input type="hidden" id="centers" name="centers" value="">
+                <input type="hidden" id="geo_mode" name="geo_mode" value="text">
+
+                <section class="panel">
+                    <div class="panel-title">1. Nội dung cần lấy</div>
+                    <div class="form-group">
+                        <label for="name">Tên tác vụ</label>
+                        <input type="text" id="name" name="name" value="{{.Name}}" placeholder="VD: Nhà hàng Vĩnh Long">
+                    </div>
+                    <div class="form-group">
+                        <label for="keywords">Chủ đề / tên / số điện thoại / email / địa chỉ</label>
+                        <textarea id="keywords" name="keywords" rows="6" placeholder="Một truy vấn mỗi dòng&#10;nhà hàng hải sản&#10;0290 3xx xxxx&#10;Tên doanh nghiệp">{{ .KeywordsString }}</textarea>
+                        <small class="hint">Có thể nhập loại hình, tên cơ sở, số điện thoại, địa chỉ hoặc chuỗi thông tin đã biết. Email chỉ được làm giàu từ website công khai khi bật tùy chọn bên dưới.</small>
+                    </div>
+                    <div class="form-grid">
                         <div class="form-group">
-                            <label for="name">Job Name:</label>
-                            <input type="text" id="name" name="name" value="{{.Name}}">
+                            <label for="lang">Ngôn ngữ</label>
+                            <input type="text" id="lang" name="lang" value="{{.Language}}" maxlength="2">
                         </div>
                         <div class="form-group">
-                            <label for="keywords">Keywords:</label>
-                            <textarea id="keywords" name="keywords" rows="10">{{ .KeywordsString }}</textarea>
+                            <label for="depth">Độ sâu kết quả</label>
+                            <input type="number" min="1" step="1" id="depth" name="depth" value="{{.Depth}}">
+                        </div>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-title">2. Phạm vi không gian</div>
+                    <div class="mode-tabs" role="tablist">
+                        <button type="button" class="mode-tab active" data-mode="text">Khu vực chữ</button>
+                        <button type="button" class="mode-tab" data-mode="radius">Tọa độ / bán kính</button>
+                        <button type="button" class="mode-tab" data-mode="route">Theo tuyến</button>
+                        <button type="button" class="mode-tab" data-mode="boundary">Địa giới</button>
+                    </div>
+
+                    <div class="mode-panel active" data-mode-panel="text">
+                        <div class="form-group">
+                            <label for="area_hint">Khu vực / địa chỉ bổ sung</label>
+                            <input type="text" id="area_hint" placeholder="VD: Phường Phước Hậu, Vĩnh Long, Việt Nam">
+                            <small class="hint">Hệ thống ghép vùng này vào từng truy vấn trước khi gửi scraper.</small>
+                        </div>
+                    </div>
+
+                    <div class="mode-panel" data-mode-panel="radius">
+                        <div class="form-group">
+                            <label for="maps_location">Dán tọa độ hoặc URL Google Maps</label>
+                            <input type="text" id="maps_location" placeholder="10.2537,105.9722 hoặc https://www.google.com/maps/...">
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="latitude">Vĩ độ</label>
+                                <input type="number" step="0.0000001" id="latitude" name="latitude" value="{{.Lat}}">
+                            </div>
+                            <div class="form-group">
+                                <label for="longitude">Kinh độ</label>
+                                <input type="number" step="0.0000001" id="longitude" name="longitude" value="{{.Lon}}">
+                            </div>
                         </div>
                         <div class="form-group">
-                            <label for="lang">Language:</label>
-                            <input type="text" id="lang" name="lang" value="{{.Language}}">
+                            <label for="radius">Bán kính (m)</label>
+                            <input type="number" min="100" step="100" id="radius" name="radius" value="{{.Radius}}">
                         </div>
-                    </fieldset>
-                    
-                    <details class="expandable-section">
-                        <summary>Location Settings</summary>
-                        <fieldset>
+                        <button type="button" class="secondary-button" id="parse-location">Đọc tọa độ</button>
+                    </div>
+
+                    <div class="mode-panel" data-mode-panel="route">
+                        <div class="form-group">
+                            <label for="route_input">Tuyến: tọa độ, URL Google Maps hoặc GeoJSON LineString</label>
+                            <textarea id="route_input" rows="6" placeholder="10.2537,105.9722&#10;10.3000,106.0000&#10;10.3500,106.0500"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="route_spacing">Khoảng cách lấy mẫu dọc tuyến (km)</label>
+                            <input type="number" id="route_spacing" min="0.5" step="0.5" value="3">
+                        </div>
+                        <button type="button" class="secondary-button" id="build-route">Tạo điểm tìm kiếm theo tuyến</button>
+                    </div>
+
+                    <div class="mode-panel" data-mode-panel="boundary">
+                        <div class="form-group">
+                            <label for="boundary_query">Tên xã/phường/tỉnh thành</label>
+                            <input type="text" id="boundary_query" placeholder="VD: phường Phước Hậu, Vĩnh Long">
+                        </div>
+                        <div class="form-grid">
                             <div class="form-group">
-                                <label for="zoom">Zoom:</label>
-                                <input type="number" id="zoom" name="zoom" value="{{.Zoom}}">
+                                <label for="boundary_spacing">Lưới lấy mẫu (km)</label>
+                                <input type="number" id="boundary_spacing" min="1" step="1" value="5">
                             </div>
                             <div class="form-group">
-                                <label for="latitude">Latitude:</label>
-                                <input type="number" step="0.000000000000001" id="latitude" name="latitude" value="{{.Lat}}">
+                                <label for="boundary_file">Hoặc GeoJSON</label>
+                                <input type="file" id="boundary_file" accept=".json,.geojson,application/geo+json,application/json">
+                            </div>
+                        </div>
+                        <button type="button" class="secondary-button" id="load-boundary">Tìm và hiển thị địa giới</button>
+                        <div id="boundary-status" class="hint"></div>
+                    </div>
+
+                    <div class="map-toolbar">
+                        <span id="spatial-summary">Chưa chọn phạm vi không gian.</span>
+                        <button type="button" class="ghost-button" id="clear-spatial">Xóa phạm vi</button>
+                    </div>
+                    <div id="search-map" aria-label="Bản đồ phạm vi tìm kiếm"></div>
+                </section>
+
+                <details class="expandable-section" open>
+                    <summary>3. Tùy chọn dữ liệu</summary>
+                    <fieldset class="details-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="zoom">Zoom</label>
+                                <input type="number" min="1" max="21" id="zoom" name="zoom" value="{{.Zoom}}">
                             </div>
                             <div class="form-group">
-                                <label for="longitude">Longitude:</label>
-                                <input type="number" step="0.000000000000001" id="longitude" name="longitude" value="{{.Lon}}">
-                            </div>
-                        </fieldset>
-                    </details>
-                    
-                    <details class="expandable-section">
-                        <summary>Advanced Options</summary>
-                        <fieldset>
-                            <div class="form-group">
-                                <label for="fastmode">Fast Mode (BETA):</label>
-                                <input type="checkbox" id="fastmode" name="fastmode" {{if .FastMode}}checked{{end}}>
-                            </div>
-                            <div class="form-group">
-                                    <label for="radius">Radius (BETA):</label>
-                                    <input type="number" id="radius" name="radius" value="{{.Radius}}">
-                            </div>
-                            <div class="form-group">
-                                <label for="depth">Depth:</label>
-                                <input type="number" step="1" id="depth" name="depth" value="{{.Depth}}">
-                            </div>
-                            <div class="form-group checkbox">
-                                <input type="checkbox" id="email" name="email" {{if .Email}}checked{{end}}>
-                                <label for="email">Fetch Emails</label>
-                            </div>
-                            <div class="form-group">
-                                <label for="maxtime">Max job time:</label>
+                                <label for="maxtime">Thời gian tối đa</label>
                                 <input type="text" id="maxtime" name="maxtime" value="{{.MaxTime}}">
                             </div>
-                        </fieldset>
-                    </details>
-                    <details class="expandable-section">
-                        <summary>Proxies</summary>
-                        <fieldset>
-                            <div class="form-group">
-                                <label for="proxies">Proxies:(one per line)</label>
-                                <p class="text-muted"><small>Examples:<br>
-                                        <p>HTTPS proxy with username/password: https://username:password@myproxy.local:443<p>
-                                        <p>HTTP proxy with username/password: http://username:password@myproxy.local:443<p>
-                                        <p>SOCKS5 proxy without auth: socks5://127.0.0.1:8000</p>
-                                </p>
+                        </div>
+                        <div class="option-row">
+                            <label class="check-label"><input type="checkbox" id="email" name="email" {{if .Email}}checked{{end}}> Làm giàu email từ website công khai</label>
+                            <label class="check-label"><input type="checkbox" id="fastmode" name="fastmode" {{if .FastMode}}checked{{end}}> Fast mode</label>
+                        </div>
+                        <small class="hint">Fast mode ưu tiên tốc độ và bán kính. Tắt Fast mode nếu cần thu thập chi tiết sâu hơn từ từng địa điểm.</small>
+                    </fieldset>
+                </details>
 
-                                <textarea id="proxies" name="proxies" rows="5">{{.ProxiesString}}</textarea>
-                            </div>
-                        </fieldset>
-                    </details>
-                    
-                    <button type="submit">Start Scraping</button>
-                </form>
-            </div>
-            <div class="content">
+                <details class="expandable-section">
+                    <summary>Proxy (tùy chọn)</summary>
+                    <fieldset class="details-body">
+                        <div class="form-group">
+                            <label for="proxies">Một proxy mỗi dòng</label>
+                            <textarea id="proxies" name="proxies" rows="4">{{.ProxiesString}}</textarea>
+                        </div>
+                    </fieldset>
+                </details>
+
+                <div class="policy-note">
+                    Chỉ nên thu thập dữ liệu địa điểm công khai và tuân thủ điều khoản sử dụng, pháp luật về dữ liệu và quyền riêng tư áp dụng cho trường hợp của bạn.
+                </div>
+                <button type="submit" class="primary-cta">Bắt đầu thu thập</button>
+            </form>
+        </aside>
+
+        <section class="spatial-content">
+            <div class="results-header">
+                <div>
+                    <h2>Tác vụ thu thập</h2>
+                    <p>CSV là đầu ra gốc; JSON và GeoJSON được sinh từ cùng kết quả.</p>
+                </div>
                 <div id="spinner" class="spinner"></div>
+            </div>
+            <div class="table-wrap">
                 <table id="job-table">
                     <thead>
-                        <tr>
-                            <th>Job ID</th>
-                            <th>Job Name</th>
-                            <th>Job Date</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
+                    <tr>
+                        <th>Job ID</th>
+                        <th>Tên</th>
+                        <th>Thời gian</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
                     </thead>
-                    <tbody id="job-tbody" hx-get="/jobs" hx-trigger="load" hx-swap="outerHTML">
-                        <!-- Job rows will be inserted here by HTMX -->
-                    </tbody>
+                    <tbody id="job-tbody" hx-get="/jobs" hx-trigger="load" hx-swap="outerHTML"></tbody>
                 </table>
-                <div id="pagination-container"></div>
             </div>
-        </main>
-    </div>
+            <div id="pagination-container"></div>
+        </section>
+    </main>
+</div>
 
-    <div id="map-modal-container"></div>
-<script>
-function hideSponsor() {
-    const sponsorSection = document.getElementById('sponsor-section');
-    if (sponsorSection) {
-        sponsorSection.style.display = 'none';
-    }
-}
-</script>
+<div id="map-modal-container"></div>
+<script src="/static/js/spatial.js"></script>
 </body>
 </html>
