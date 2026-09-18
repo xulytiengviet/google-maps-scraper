@@ -133,22 +133,10 @@
         <label class="check"><input id="fastMode" type="checkbox" checked> Fast mode</label>
       </details>
 
-      <button id="startJob" type="button" class="primary full action-button">Bắt đầu thu thập POI</button>
+      <button id="startJob" type="button" class="primary full action-button">Chạy thu thập trên PC</button>
       <div id="jobStatus" class="status"></div>
+      <p class="muted"><strong>Local Mode:</strong> Không cần Backend API URL. Tải mã nguồn về PC, chạy <code>START_LOCAL_WINDOWS.bat</code>, chọn thư mục lưu; công cụ tự mở và tự lưu CSV / JSON / GeoJSON.</p>
     </section>
-
-    <details class="card api-card">
-      <summary>Cấu hình máy chủ thu thập dữ liệu</summary>
-      <p class="muted">Chỉ cần cấu hình một lần. Đây không phải URL Google Maps.</p>
-      <label for="apiBase">Backend API HTTPS</label>
-      <input id="apiBase" type="url" placeholder="https://maps-api.tenmiencuaban.vn">
-      <div class="row">
-        <button id="saveApi" type="button">Lưu API</button>
-        <button id="testApi" type="button" class="secondary">Kiểm tra</button>
-      </div>
-      <p class="muted"><strong>Notes:</strong> URL API chỉ lưu trên trình duyệt cá nhân bằng Local Storage.</p>
-      <div id="apiStatus" class="status"></div>
-    </details>
   </aside>
 
   <main class="workspace">
@@ -166,25 +154,14 @@
     <section class="resultcard">
       <div class="resultshead">
         <div>
-          <h2>Kết quả tác vụ</h2>
-          <p>Xuất dữ liệu sau khi backend hoàn tất thu thập.</p>
+          <h2>Local Mode trên PC</h2>
+          <p>Không cần Backend API URL, VPS hay dịch vụ cloud.</p>
         </div>
-        <button id="refreshJobs" type="button" class="secondary">Làm mới</button>
       </div>
-      <div class="tablewrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Tác vụ</th>
-              <th>Trạng thái</th>
-              <th>ID</th>
-              <th>Xuất dữ liệu</th>
-            </tr>
-          </thead>
-          <tbody id="jobsBody">
-            <tr><td colspan="4" class="empty">Chưa có tác vụ.</td></tr>
-          </tbody>
-        </table>
+      <div class="local-mode-guide">
+        <p><strong>Cách dùng:</strong> tải repository về máy → chạy <code>START_LOCAL_WINDOWS.bat</code> → chọn thư mục lưu → dán URL Google Maps → chọn bán kính/địa giới/tuyến → thu thập POI.</p>
+        <p>Khi hoàn tất, dữ liệu được lưu cục bộ dưới dạng <code>CSV</code>, <code>JSON</code> và <code>GeoJSON</code>.</p>
+        <a class="local-download-button" href="https://github.com/xulytiengviet/google-maps-scraper" target="_blank" rel="noopener">Mở mã nguồn Local Mode</a>
       </div>
     </section>
   </main>
