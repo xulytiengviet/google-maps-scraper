@@ -1,5 +1,29 @@
 # Google Maps Scraper
 
+> **Local POI Mode — Long Ngo**
+>
+> Bản tùy biến này có chế độ chạy hoàn toàn trên PC: **không cần Backend API URL, không cần VPS/cloud**. Người dùng chỉ chọn thư mục lưu, sau đó giao diện local tự mở tại `http://127.0.0.1:8080`. Mỗi tác vụ hoàn tất tự tạo **CSV, JSON và GeoJSON** trong thư mục đã chọn.
+
+## Chạy Local Mode trên Windows
+
+Yêu cầu duy nhất cho bản hiện tại là **Docker Desktop đang chạy**. Không cần cấu hình API hoặc server.
+
+1. Clone/tải repository về PC.
+2. Nhấp đúp **`START_LOCAL_WINDOWS.bat`**.
+3. Chọn thư mục muốn lưu dữ liệu.
+4. Trình duyệt tự mở công cụ.
+5. Dán URL Google Maps → chọn bán kính/địa giới/tuyến → nhập loại POI → **Bắt đầu thu thập POI**.
+6. Khi job hoàn tất, thư mục đã chọn có:
+   - `<job-id>.csv`
+   - `<job-id>.json`
+   - `<job-id>.geojson`
+   - `jobs.db` để lưu trạng thái tác vụ local.
+
+Để dừng ứng dụng, chạy **`STOP_LOCAL_WINDOWS.bat`**.
+
+Dữ liệu và trạng thái job nằm trên PC của người dùng. Launcher đặt `DISABLE_TELEMETRY=1` cho Local Mode.
+
+
 <p align="center">
   <a href="https://github.com/gosom/google-maps-scraper/stargazers"><img src="https://img.shields.io/github/stars/gosom/google-maps-scraper?style=social" alt="GitHub Stars"></a>
   <a href="https://github.com/gosom/google-maps-scraper/network/members"><img src="https://img.shields.io/github/forks/gosom/google-maps-scraper?style=social" alt="GitHub Forks"></a>
