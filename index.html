@@ -4,19 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="Google Maps Spatial Data Explorer - WebGIS frontend for xulytiengviet/google-maps-scraper">
-  <title>Google Maps Spatial Data Explorer</title>
+  <title>Công cụ trích xuất POI từ Google Map</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Vietflexmap/VN@6144d565fcf236727577ab3c4471bbe49f86892f/dist/vietflex.css">
   <link rel="stylesheet" href="./pages-style.css">
 </head>
 <body>
 <header class="topbar">
   <div>
-    <h1>Google Maps Spatial Data Explorer</h1>
-    <p>Tìm kiếm địa điểm theo chủ đề, tọa độ, bán kính, tuyến và địa giới; xuất CSV / JSON / GeoJSON.</p>
+    <h1>Công cụ trích xuất POI từ Google Map</h1>
+    <p>Tìm kiếm và trích xuất điểm quan tâm (POI) theo chủ đề, tọa độ, bán kính, tuyến và địa giới; xuất CSV / JSON / GeoJSON.</p>
   </div>
   <div class="toplinks">
     <a href="https://github.com/xulytiengviet/google-maps-scraper" target="_blank" rel="noopener">GitHub</a>
-    <a href="https://github.com/xulytiengviet/google-maps-scraper/pull/1" target="_blank" rel="noopener">WebGIS PR</a>
   </div>
 </header>
 
@@ -25,12 +24,17 @@
     <section class="card">
       <h2>1. Backend API</h2>
       <label for="apiBase">URL máy chủ scraper</label>
-      <input id="apiBase" type="url" placeholder="https://api.example.com">
+      <input id="apiBase" type="url" placeholder="VD: https://maps-api.tenmiencuaban.vn">
       <div class="row">
         <button id="saveApi" type="button">Lưu API</button>
         <button id="testApi" type="button" class="secondary">Kiểm tra</button>
       </div>
-      <p class="muted">GitHub Pages chỉ chạy frontend. Scraper Go/Playwright phải chạy trên máy chủ khác qua HTTPS.</p>
+      <p class="muted">
+        URL này là địa chỉ HTTPS của backend chạy <strong>google-maps-scraper</strong>. 
+        Anh có thể lấy URL sau khi triển khai backend lên VPS/server riêng, Render, Fly.io, Railway, Google Cloud Run hoặc dịch vụ tương đương.
+        Ví dụ: <code>https://maps-api.tenmiencuaban.vn</code> hoặc URL HTTPS do nền tảng triển khai cung cấp.
+      </p>
+      <p class="muted"><strong>Notes:</strong> URL API chỉ được lưu trên trình duyệt cá nhân của anh bằng Local Storage, không được ghi vào repository hay gửi lên GitHub Pages.</p>
       <div id="apiStatus" class="status"></div>
     </section>
 
@@ -170,7 +174,7 @@
 </div>
 
 <footer>
-  Frontend GitHub Pages của <strong>xulytiengviet/google-maps-scraper</strong>. Hiển thị bản đồ bằng Vietflex Map; Nominatim chỉ dùng tra cứu địa giới tham chiếu. Hãy nạp GeoJSON chính thức khi cần ranh giới pháp lý.
+  Giấy phép MIT · Long Ngo phát triển · Sử dụng phục vụ học tập và nghiên cứu.
 </footer>
 
 <script src="https://cdn.jsdelivr.net/gh/Vietflexmap/VN@6144d565fcf236727577ab3c4471bbe49f86892f/dist/vietflex.js"></script>
