@@ -133,9 +133,9 @@
         <label class="check"><input id="fastMode" type="checkbox" checked> Fast mode</label>
       </details>
 
-      <button id="startJob" type="button" class="primary full action-button">Chạy thu thập trên PC</button>
+      <button id="startJob" type="button" class="primary full action-button">Chạy trên GitHub Actions</button>
       <div id="jobStatus" class="status"></div>
-      <p class="muted"><strong>Local Mode:</strong> Không cần cấu hình máy chủ. Tải mã nguồn về PC, chạy <code>START_LOCAL_WINDOWS.bat</code>, chọn thư mục lưu; công cụ tự mở và tự lưu CSV / JSON / GeoJSON.</p>
+      <p class="muted"><strong>GitHub Mode:</strong> Không cần cài phần mềm hay cấu hình máy chủ. Nút trên sẽ sao chép cấu hình hiện tại và mở workflow <code>POI Scraper</code>; chạy workflow để nhận artifact chứa CSV / JSON / GeoJSON.</p>
     </section>
   </aside>
 
@@ -154,14 +154,14 @@
     <section class="resultcard">
       <div class="resultshead">
         <div>
-          <h2>Local Mode trên PC</h2>
-          <p>Chạy cục bộ trên PC, không cần cấu hình máy chủ hay dịch vụ cloud.</p>
+          <h2>Chạy bằng GitHub Actions</h2>
+          <p>Runner GitHub thực hiện thu thập và đóng gói kết quả thành artifact.</p>
         </div>
       </div>
       <div class="local-mode-guide">
-        <p><strong>Cách dùng:</strong> tải repository về máy → chạy <code>START_LOCAL_WINDOWS.bat</code> → chọn thư mục lưu → dán URL Google Maps → chọn bán kính/địa giới/tuyến → thu thập POI.</p>
-        <p>Khi hoàn tất, dữ liệu được lưu cục bộ dưới dạng <code>CSV</code>, <code>JSON</code> và <code>GeoJSON</code>.</p>
-        <a class="local-download-button" href="https://github.com/xulytiengviet/google-maps-scraper" target="_blank" rel="noopener">Mở mã nguồn Local Mode</a>
+        <p><strong>Luồng:</strong> chuẩn bị phạm vi tại trang này → bấm <strong>Chạy trên GitHub Actions</strong> → dán các tham số đã sao chép vào <strong>Run workflow</strong> → tải artifact <code>poi-results-&lt;run-number&gt;</code>.</p>
+        <p>Artifact gồm <code>results.csv</code>, <code>results.json</code>, <code>results.geojson</code> và <code>request.json</code>.</p>
+        <a class="local-download-button" href="https://github.com/xulytiengviet/google-maps-scraper/actions/workflows/poi-scraper.yml" target="_blank" rel="noopener">Mở POI Scraper Workflow</a>
       </div>
     </section>
   </main>
