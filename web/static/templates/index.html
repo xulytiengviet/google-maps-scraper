@@ -1,208 +1,202 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Maps Spatial Data Explorer</title>
-    <link rel="stylesheet" href="/static/css/main.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/1.9.6/htmx.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Công cụ local trích xuất POI từ Google Map">
+  <title>Công cụ trích xuất POI từ Google Map</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Vietflexmap/VN@6144d565fcf236727577ab3c4471bbe49f86892f/dist/vietflex.css">
+  <link rel="stylesheet" href="/static/css/main.css">
 </head>
-<body class="spatial-app">
-<div class="app-container">
-    <header class="spatial-header">
-        <div>
-            <h1>Google Maps Spatial Data Explorer</h1>
-            <p class="header-subtitle">Tìm địa điểm công khai theo từ khóa, tọa độ, bán kính, tuyến hoặc địa giới hành chính; xuất CSV / JSON / GeoJSON.</p>
+<body class="local-poi-app">
+<header class="spatial-header local-header">
+  <div>
+    <h1>Công cụ trích xuất POI từ Google Map</h1>
+    <p class="header-subtitle">Chạy hoàn toàn trên PC. Không cần Backend API URL, không cần máy chủ bên ngoài. CSV / JSON / GeoJSON tự lưu vào thư mục đã chọn khi khởi động.</p>
+  </div>
+  <nav class="header-actions">
+    <a href="https://github.com/xulytiengviet/google-maps-scraper" target="_blank" rel="noopener noreferrer">GitHub</a>
+  </nav>
+</header>
+
+<main class="local-main">
+  <aside class="local-sidebar">
+    <section class="panel local-highlight">
+      <div class="panel-title">1. Dán link Google Maps</div>
+      <div class="form-group">
+        <label for="maps_url">URL địa điểm Google Maps</label>
+        <textarea id="maps_url" rows="4" spellcheck="false" placeholder="https://www.google.com/maps/place/.../@10.2694912,106.3616512,...!3d10.2702283!4d106.359458..."></textarea>
+      </div>
+      <button type="button" class="primary-cta" id="parse-url">Đọc vị trí từ URL</button>
+      <div id="url-status" class="hint"></div>
+      <div id="poi-info" class="local-poi-info" hidden>
+        <strong id="poi-name">Google Maps POI</strong>
+        <div><code id="poi-coords"></code></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">2. Chọn phạm vi</div>
+      <div class="mode-tabs local-mode-tabs">
+        <button type="button" class="mode-tab active" data-mode="radius">Bán kính</button>
+        <button type="button" class="mode-tab" data-mode="boundary">Địa giới</button>
+        <button type="button" class="mode-tab" data-mode="route">Theo tuyến</button>
+      </div>
+
+      <div class="mode-panel active" data-mode-panel="radius">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="radius">Bán kính (m)</label>
+            <input type="number" id="radius" min="100" step="100" value="5000">
+          </div>
+          <div class="form-group">
+            <label for="radius_preset">Chọn nhanh</label>
+            <select id="radius_preset">
+              <option value="500">500 m</option>
+              <option value="1000">1 km</option>
+              <option value="2000">2 km</option>
+              <option value="5000" selected>5 km</option>
+              <option value="10000">10 km</option>
+              <option value="20000">20 km</option>
+            </select>
+          </div>
         </div>
-        <nav class="header-actions">
-            <a href="/api/docs" target="_blank" rel="noopener noreferrer">REST API</a>
-            <a href="https://github.com/xulytiengviet/google-maps-scraper" target="_blank" rel="noopener noreferrer">GitHub</a>
-        </nav>
-    </header>
+      </div>
 
-    <main class="spatial-main">
-        <aside class="spatial-sidebar">
-            <div id="error-container" class="error-message"></div>
+      <div class="mode-panel" data-mode-panel="boundary">
+        <div class="form-group">
+          <label for="boundary_query">Xã / phường / tỉnh / thành phố</label>
+          <input type="text" id="boundary_query" placeholder="VD: Bến Tre, Vĩnh Long, phường Phú Tân">
+        </div>
+        <div class="form-grid">
+          <button type="button" class="secondary-button" id="suggest-boundary">Gợi ý từ POI</button>
+          <button type="button" class="secondary-button" id="load-boundary">Tìm địa giới</button>
+        </div>
+        <div class="form-group">
+          <label for="boundary_spacing">Lưới lấy mẫu (km)</label>
+          <input type="number" id="boundary_spacing" min="1" step="1" value="5">
+        </div>
+        <div class="form-group">
+          <label for="boundary_file">Hoặc nạp GeoJSON</label>
+          <input type="file" id="boundary_file" accept=".json,.geojson,application/json,application/geo+json">
+        </div>
+        <div id="boundary-status" class="hint"></div>
+      </div>
 
-            <form id="spatial-search-form"
-                  hx-post="/scrape"
-                  hx-target="#job-tbody"
-                  hx-swap="outerHTML"
-                  hx-indicator="#spinner"
-                  hx-on::before-request="document.getElementById('error-container').innerHTML=''"
-                  hx-on::after-request="if(!event.detail.successful) document.getElementById('error-container').innerHTML=event.detail.xhr.responseText">
+      <div class="mode-panel" data-mode-panel="route">
+        <div class="form-group">
+          <label for="route_input">Danh sách tọa độ / GeoJSON LineString</label>
+          <textarea id="route_input" rows="5" placeholder="10.2702283,106.359458&#10;10.3000000,106.4000000"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="route_spacing">Khoảng cách lấy mẫu (km)</label>
+          <input type="number" id="route_spacing" min="0.5" step="0.5" value="3">
+        </div>
+        <button type="button" class="secondary-button" id="build-route">Tạo tuyến</button>
+      </div>
 
-                <input type="hidden" id="centers" name="centers" value="">
-                <input type="hidden" id="geo_mode" name="geo_mode" value="text">
+      <div class="map-toolbar">
+        <span id="spatial-summary">Chưa có vị trí.</span>
+        <button type="button" class="ghost-button" id="clear-spatial">Xóa</button>
+      </div>
+    </section>
 
-                <section class="panel">
-                    <div class="panel-title">1. Nội dung cần lấy</div>
-                    <div class="form-group">
-                        <label for="name">Tên tác vụ</label>
-                        <input type="text" id="name" name="name" value="{{.Name}}" placeholder="VD: Nhà hàng Vĩnh Long">
-                    </div>
-                    <div class="form-group">
-                        <label for="keywords">Chủ đề / tên / số điện thoại / email / địa chỉ</label>
-                        <textarea id="keywords" name="keywords" rows="6" placeholder="Một truy vấn mỗi dòng&#10;nhà hàng hải sản&#10;0290 3xx xxxx&#10;Tên doanh nghiệp">{{ .KeywordsString }}</textarea>
-                        <small class="hint">Có thể nhập loại hình, tên cơ sở, số điện thoại, địa chỉ hoặc chuỗi thông tin đã biết. Email chỉ được làm giàu từ website công khai khi bật tùy chọn bên dưới.</small>
-                    </div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="lang">Ngôn ngữ</label>
-                            <input type="text" id="lang" name="lang" value="{{.Language}}" maxlength="2">
-                        </div>
-                        <div class="form-group">
-                            <label for="depth">Độ sâu kết quả</label>
-                            <input type="number" min="1" step="1" id="depth" name="depth" value="{{.Depth}}">
-                        </div>
-                    </div>
-                </section>
+    <section class="panel">
+      <div class="panel-title">3. Chọn POI cần tìm</div>
+      <div class="form-group">
+        <label for="keywords">Một từ khóa mỗi dòng</label>
+        <textarea id="keywords" rows="5" placeholder="nhà hàng&#10;quán cà phê&#10;khách sạn"></textarea>
+      </div>
+      <div class="local-chips">
+        <button type="button" data-keyword="nhà hàng">Nhà hàng</button>
+        <button type="button" data-keyword="quán cà phê">Cà phê</button>
+        <button type="button" data-keyword="khách sạn">Khách sạn</button>
+        <button type="button" data-keyword="trường học">Trường học</button>
+        <button type="button" data-keyword="bệnh viện">Bệnh viện</button>
+        <button type="button" data-keyword="nhà thuốc">Nhà thuốc</button>
+        <button type="button" data-keyword="ngân hàng">Ngân hàng</button>
+        <button type="button" data-keyword="trạm xăng">Trạm xăng</button>
+      </div>
 
-                <section class="panel">
-                    <div class="panel-title">2. Phạm vi không gian</div>
-                    <div class="mode-tabs" role="tablist">
-                        <button type="button" class="mode-tab active" data-mode="text">Khu vực chữ</button>
-                        <button type="button" class="mode-tab" data-mode="radius">Tọa độ / bán kính</button>
-                        <button type="button" class="mode-tab" data-mode="route">Theo tuyến</button>
-                        <button type="button" class="mode-tab" data-mode="boundary">Địa giới</button>
-                    </div>
-
-                    <div class="mode-panel active" data-mode-panel="text">
-                        <div class="form-group">
-                            <label for="area_hint">Khu vực / địa chỉ bổ sung</label>
-                            <input type="text" id="area_hint" placeholder="VD: Phường Phước Hậu, Vĩnh Long, Việt Nam">
-                            <small class="hint">Hệ thống ghép vùng này vào từng truy vấn trước khi gửi scraper.</small>
-                        </div>
-                    </div>
-
-                    <div class="mode-panel" data-mode-panel="radius">
-                        <div class="form-group">
-                            <label for="maps_location">Dán tọa độ hoặc URL Google Maps</label>
-                            <input type="text" id="maps_location" placeholder="10.2537,105.9722 hoặc https://www.google.com/maps/...">
-                        </div>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="latitude">Vĩ độ</label>
-                                <input type="number" step="0.0000001" id="latitude" name="latitude" value="{{.Lat}}">
-                            </div>
-                            <div class="form-group">
-                                <label for="longitude">Kinh độ</label>
-                                <input type="number" step="0.0000001" id="longitude" name="longitude" value="{{.Lon}}">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="radius">Bán kính (m)</label>
-                            <input type="number" min="100" step="100" id="radius" name="radius" value="{{.Radius}}">
-                        </div>
-                        <button type="button" class="secondary-button" id="parse-location">Đọc tọa độ</button>
-                    </div>
-
-                    <div class="mode-panel" data-mode-panel="route">
-                        <div class="form-group">
-                            <label for="route_input">Tuyến: tọa độ, URL Google Maps hoặc GeoJSON LineString</label>
-                            <textarea id="route_input" rows="6" placeholder="10.2537,105.9722&#10;10.3000,106.0000&#10;10.3500,106.0500"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label for="route_spacing">Khoảng cách lấy mẫu dọc tuyến (km)</label>
-                            <input type="number" id="route_spacing" min="0.5" step="0.5" value="3">
-                        </div>
-                        <button type="button" class="secondary-button" id="build-route">Tạo điểm tìm kiếm theo tuyến</button>
-                    </div>
-
-                    <div class="mode-panel" data-mode-panel="boundary">
-                        <div class="form-group">
-                            <label for="boundary_query">Tên xã/phường/tỉnh thành</label>
-                            <input type="text" id="boundary_query" placeholder="VD: phường Phước Hậu, Vĩnh Long">
-                        </div>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="boundary_spacing">Lưới lấy mẫu (km)</label>
-                                <input type="number" id="boundary_spacing" min="1" step="1" value="5">
-                            </div>
-                            <div class="form-group">
-                                <label for="boundary_file">Hoặc GeoJSON</label>
-                                <input type="file" id="boundary_file" accept=".json,.geojson,application/geo+json,application/json">
-                            </div>
-                        </div>
-                        <button type="button" class="secondary-button" id="load-boundary">Tìm và hiển thị địa giới</button>
-                        <div id="boundary-status" class="hint"></div>
-                    </div>
-
-                    <div class="map-toolbar">
-                        <span id="spatial-summary">Chưa chọn phạm vi không gian.</span>
-                        <button type="button" class="ghost-button" id="clear-spatial">Xóa phạm vi</button>
-                    </div>
-                    <div id="search-map" aria-label="Bản đồ phạm vi tìm kiếm"></div>
-                </section>
-
-                <details class="expandable-section" open>
-                    <summary>3. Tùy chọn dữ liệu</summary>
-                    <fieldset class="details-body">
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="zoom">Zoom</label>
-                                <input type="number" min="1" max="21" id="zoom" name="zoom" value="{{.Zoom}}">
-                            </div>
-                            <div class="form-group">
-                                <label for="maxtime">Thời gian tối đa</label>
-                                <input type="text" id="maxtime" name="maxtime" value="{{.MaxTime}}">
-                            </div>
-                        </div>
-                        <div class="option-row">
-                            <label class="check-label"><input type="checkbox" id="email" name="email" {{if .Email}}checked{{end}}> Làm giàu email từ website công khai</label>
-                            <label class="check-label"><input type="checkbox" id="fastmode" name="fastmode" {{if .FastMode}}checked{{end}}> Fast mode</label>
-                        </div>
-                        <small class="hint">Fast mode ưu tiên tốc độ và bán kính. Tắt Fast mode nếu cần thu thập chi tiết sâu hơn từ từng địa điểm.</small>
-                    </fieldset>
-                </details>
-
-                <details class="expandable-section">
-                    <summary>Proxy (tùy chọn)</summary>
-                    <fieldset class="details-body">
-                        <div class="form-group">
-                            <label for="proxies">Một proxy mỗi dòng</label>
-                            <textarea id="proxies" name="proxies" rows="4">{{.ProxiesString}}</textarea>
-                        </div>
-                    </fieldset>
-                </details>
-
-                <div class="policy-note">
-                    Chỉ nên thu thập dữ liệu địa điểm công khai và tuân thủ điều khoản sử dụng, pháp luật về dữ liệu và quyền riêng tư áp dụng cho trường hợp của bạn.
-                </div>
-                <button type="submit" class="primary-cta">Bắt đầu thu thập</button>
-            </form>
-        </aside>
-
-        <section class="spatial-content">
-            <div class="results-header">
-                <div>
-                    <h2>Tác vụ thu thập</h2>
-                    <p>CSV là đầu ra gốc; JSON và GeoJSON được sinh từ cùng kết quả.</p>
-                </div>
-                <div id="spinner" class="spinner"></div>
+      <details class="expandable-section local-advanced">
+        <summary>Tùy chọn nâng cao</summary>
+        <fieldset class="details-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="lang">Ngôn ngữ</label>
+              <input type="text" id="lang" value="vi" maxlength="2">
             </div>
-            <div class="table-wrap">
-                <table id="job-table">
-                    <thead>
-                    <tr>
-                        <th>Job ID</th>
-                        <th>Tên</th>
-                        <th>Thời gian</th>
-                        <th>Trạng thái</th>
-                        <th>Thao tác</th>
-                    </tr>
-                    </thead>
-                    <tbody id="job-tbody" hx-get="/jobs" hx-trigger="load" hx-swap="outerHTML"></tbody>
-                </table>
+            <div class="form-group">
+              <label for="depth">Độ sâu</label>
+              <input type="number" id="depth" value="10" min="1">
             </div>
-            <div id="pagination-container"></div>
-        </section>
-    </main>
-</div>
+            <div class="form-group">
+              <label for="zoom">Zoom</label>
+              <input type="number" id="zoom" value="15" min="1" max="21">
+            </div>
+            <div class="form-group">
+              <label for="max_time">Tối đa (giây)</label>
+              <input type="number" id="max_time" value="600" min="180">
+            </div>
+          </div>
+          <div class="option-row">
+            <label class="check-label"><input type="checkbox" id="email"> Lấy email công khai từ website</label>
+            <label class="check-label"><input type="checkbox" id="fast_mode" checked> Fast mode</label>
+          </div>
+        </fieldset>
+      </details>
 
-<div id="map-modal-container"></div>
-<script src="/static/js/spatial.js"></script>
+      <div class="local-save-note">
+        <strong>Đầu ra tự động:</strong> mỗi tác vụ hoàn tất sẽ tạo 3 file <code>.csv</code>, <code>.json</code> và <code>.geojson</code> trong thư mục anh đã chọn khi mở ứng dụng.
+      </div>
+      <button type="button" class="primary-cta local-run" id="start-job">Bắt đầu thu thập POI</button>
+      <div id="job-status" class="hint"></div>
+    </section>
+  </aside>
+
+  <section class="local-content">
+    <div class="panel local-map-panel">
+      <div class="results-header">
+        <div>
+          <h2>Phạm vi thu thập</h2>
+          <p>Vietflex Map + Google Roadmap.</p>
+        </div>
+        <span id="map-badge" class="local-badge">Chưa có vị trí</span>
+      </div>
+      <div id="search-map"></div>
+    </div>
+
+    <div class="panel">
+      <div class="results-header">
+        <div>
+          <h2>Tác vụ và tập dữ liệu</h2>
+          <p>Dữ liệu lưu cục bộ trên PC; có thể tải lại từng định dạng từ bảng này.</p>
+        </div>
+        <button type="button" class="secondary-button local-refresh" id="refresh-jobs">Làm mới</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tên tác vụ</th>
+              <th>Trạng thái</th>
+              <th>CSV</th>
+              <th>JSON</th>
+              <th>GeoJSON</th>
+            </tr>
+          </thead>
+          <tbody id="local-jobs">
+            <tr><td colspan="5">Chưa có tác vụ.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="local-footer">Giấy phép MIT · Long Ngo phát triển · Sử dụng phục vụ học tập và nghiên cứu.</footer>
+
+<script src="https://cdn.jsdelivr.net/gh/Vietflexmap/VN@6144d565fcf236727577ab3c4471bbe49f86892f/dist/vietflex.js"></script>
+<script src="/static/js/local-app.js"></script>
 </body>
 </html>

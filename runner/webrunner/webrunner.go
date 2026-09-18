@@ -277,7 +277,15 @@ func (w *webrunner) scrapeJob(ctx context.Context, job *web.Job) error {
 
 	job.Status = web.StatusOK
 
-	return w.svc.Update(ctx, job)
+	if err := w.svc.Update(ctx, job); err != nil {
+		return err
+	}
+
+	if _, err := w.svc.MaterializeExports(ctx, job.ID); err != nil {
+		log.Printf("job %s completed but local export materialization failed: %v", job.ID, err)
+	}
+
+	return nil
 }
 
 func defaultSetupMate(cfg *runner.Config) func(context.Context, io.Writer, *web.Job) (mateRunner, error) {
