@@ -63,6 +63,11 @@ func New(svc *Service, addr string) (*Server, error) {
 
 		ans.download(w, r)
 	})
+	mux.HandleFunc("/export", func(w http.ResponseWriter, r *http.Request) {
+		r = requestWithID(r)
+
+		ans.exportJob(w, r)
+	})
 	mux.HandleFunc("/delete", func(w http.ResponseWriter, r *http.Request) {
 		r = requestWithID(r)
 
@@ -127,6 +132,10 @@ func New(svc *Service, addr string) (*Server, error) {
 		}
 
 		ans.download(w, r)
+	})
+	mux.HandleFunc("/api/v1/jobs/{id}/export", func(w http.ResponseWriter, r *http.Request) {
+		r = requestWithID(r)
+		ans.exportJob(w, r)
 	})
 
 	handler := securityHeaders(mux)
@@ -337,6 +346,14 @@ func (s *Server) scrape(w http.ResponseWriter, r *http.Request) {
 
 	newJob.Data.Lat = r.Form.Get("latitude")
 	newJob.Data.Lon = r.Form.Get("longitude")
+	newJob.Data.GeoMode = strings.TrimSpace(r.Form.Get("geo_mode"))
+
+	if centersJSON := strings.TrimSpace(r.Form.Get("centers")); centersJSON != "" {
+		if err := json.Unmarshal([]byte(centersJSON), &newJob.Data.Centers); err != nil {
+			http.Error(w, "invalid spatial centers", http.StatusUnprocessableEntity)
+			return
+		}
+	}
 
 	newJob.Data.Depth, err = strconv.Atoi(r.Form.Get("depth"))
 	if err != nil {
@@ -712,7 +729,7 @@ func securityHeaders(next http.Handler) http.Handler {
 				"style-src 'self' 'unsafe-inline' fonts.googleapis.com cdnjs.cloudflare.com; "+
 				"img-src 'self' data: cdn.redoc.ly cdnjs.cloudflare.com *.tile.openstreetmap.org; "+
 				"font-src 'self' fonts.gstatic.com; "+
-				"connect-src 'self'")
+				"connect-src 'self' https://nominatim.openstreetmap.org")
 
 		next.ServeHTTP(w, r)
 	})
