@@ -1,0 +1,162 @@
+name: POI Scraper
+
+on:
+  workflow_dispatch:
+    inputs:
+      maps_url:
+        description: "Google Maps URL (required for radius; optional label/source for other modes)"
+        required: false
+        type: string
+      keywords:
+        description: "POI keywords separated by semicolon, e.g. nha hang;quan ca phe;khach san"
+        required: true
+        default: "nhà hàng"
+        type: string
+      mode:
+        description: "Spatial search mode"
+        required: true
+        default: "radius"
+        type: choice
+        options:
+          - radius
+          - boundary
+          - route
+      radius:
+        description: "Radius in meters (radius mode)"
+        required: true
+        default: "5000"
+        type: string
+      boundary_query:
+        description: "Administrative area name (boundary mode), e.g. Bến Tre, Vĩnh Long"
+        required: false
+        type: string
+      boundary_spacing:
+        description: "Boundary sampling grid in km"
+        required: true
+        default: "5"
+        type: string
+      route_input:
+        description: "Route coordinates separated by semicolon, e.g. 10.27,106.35;10.30,106.40"
+        required: false
+        type: string
+      route_spacing:
+        description: "Route sampling distance in km"
+        required: true
+        default: "3"
+        type: string
+      depth:
+        description: "Google Maps scroll depth"
+        required: true
+        default: "10"
+        type: string
+      max_time:
+        description: "Maximum scrape time in seconds"
+        required: true
+        default: "900"
+        type: string
+      email:
+        description: "Enrich public emails from business websites"
+        required: true
+        default: false
+        type: boolean
+      fast_mode:
+        description: "Use fast mode"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  scrape:
+    name: Scrape POI and export datasets
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build scraper image
+        run: docker build -t longngo/google-maps-poi-actions:run .
+
+      - name: Start local scraper service
+        run: |
+          mkdir -p action-data action-output
+          docker run -d \
+            --name google-maps-poi-actions \
+            -e DISABLE_TELEMETRY=1 \
+            -p 127.0.0.1:8080:8080 \
+            -v "$PWD/action-data:/data" \
+            longngo/google-maps-poi-actions:run \
+            -data-folder /data \
+            -addr :8080
+
+          for i in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:8080/api/v1/jobs >/dev/null; then
+              echo "Local scraper service is ready."
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "Scraper service did not become ready."
+          docker logs google-maps-poi-actions || true
+          exit 1
+
+      - name: Run spatial scrape
+        env:
+          MAPS_URL: ${{ inputs.maps_url }}
+          KEYWORDS: ${{ inputs.keywords }}
+          MODE: ${{ inputs.mode }}
+          RADIUS: ${{ inputs.radius }}
+          BOUNDARY_QUERY: ${{ inputs.boundary_query }}
+          BOUNDARY_SPACING: ${{ inputs.boundary_spacing }}
+          ROUTE_INPUT: ${{ inputs.route_input }}
+          ROUTE_SPACING: ${{ inputs.route_spacing }}
+          DEPTH: ${{ inputs.depth }}
+          MAX_TIME: ${{ inputs.max_time }}
+          EMAIL: ${{ inputs.email }}
+          FAST_MODE: ${{ inputs.fast_mode }}
+        run: |
+          args=(
+            --api "http://127.0.0.1:8080"
+            --mode "$MODE"
+            --maps-url "$MAPS_URL"
+            --keywords "$KEYWORDS"
+            --radius "$RADIUS"
+            --boundary-query "$BOUNDARY_QUERY"
+            --boundary-spacing "$BOUNDARY_SPACING"
+            --route-input "$ROUTE_INPUT"
+            --route-spacing "$ROUTE_SPACING"
+            --depth "$DEPTH"
+            --max-time "$MAX_TIME"
+            --lang "vi"
+            --zoom "15"
+            --out "action-output"
+          )
+
+          if [ "$EMAIL" = "true" ]; then
+            args+=(--email)
+          fi
+          if [ "$FAST_MODE" = "true" ]; then
+            args+=(--fast-mode)
+          fi
+
+          python3 scripts/github_action_job.py "${args[@]}"
+
+      - name: Save runner logs on failure
+        if: failure()
+        run: |
+          mkdir -p action-output
+          docker logs google-maps-poi-actions > action-output/runner.log 2>&1 || true
+
+      - name: Upload CSV JSON GeoJSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: poi-results-${{ github.run_number }}
+          path: action-output/
+          if-no-files-found: warn
+          retention-days: 7
