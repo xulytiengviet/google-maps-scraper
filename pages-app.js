@@ -3,9 +3,10 @@
 
 const $=id=>document.getElementById(id);
 let mode='text', centers=[], geometry=null;
-const map=L.map('map').setView([16.2,106.2],6);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
-const overlay=L.layerGroup().addTo(map);
+const map=Vietflex.vietflexMap('map',{useLegacyGoogleTiles:true,googleMapType:'roadmap',zoomControl:false,attributionControl:false,center:[16.2,106.2],zoom:6});
+new Vietflex.ZoomControl({position:'topleft'}).addTo(map);
+new Vietflex.AttributionControl({position:'bottomright'}).addTo(map);
+const overlay=new Vietflex.LayerGroup().addTo(map);
 
 function apiBase(){return ($('apiBase').value||localStorage.getItem('gmapsApiBase')||'').trim().replace(/\/$/,'');}
 function setStatus(el,msg,type){el.textContent=msg||'';el.className='status'+(type?' '+type:'');}
@@ -13,7 +14,7 @@ function pointValid(p){return p&&Number.isFinite(p.lat)&&Number.isFinite(p.lon)&
 function dedupe(points){const s=new Set(),out=[];points.forEach(p=>{if(!pointValid(p))return;const k=p.lat.toFixed(6)+','+p.lon.toFixed(6);if(!s.has(k)){s.add(k);out.push({lat:p.lat,lon:p.lon});}});return out}
 function cap(points,n=250){if(points.length<=n)return points;const out=[],step=points.length/n;for(let i=0;i<n;i++)out.push(points[Math.floor(i*step)]);return out}
 function setCenters(points,label){centers=cap(dedupe(points));$('spatialSummary').textContent=label||(!centers.length?'Chưa chọn phạm vi không gian.':centers.length+' điểm tìm kiếm');draw()}
-function draw(){overlay.clearLayers();if(geometry)L.geoJSON(geometry,{style:{weight:2,fillOpacity:.08}}).addTo(overlay);centers.forEach(p=>L.circleMarker([p.lat,p.lon],{radius:4,weight:1,fillOpacity:.8}).addTo(overlay));const ls=overlay.getLayers();if(ls.length){const g=L.featureGroup(ls),b=g.getBounds();if(b.isValid())map.fitBounds(b.pad(.15));}}
+function draw(){overlay.clearLayers();if(geometry)new Vietflex.GeoJSON(geometry,{style:{weight:2,fillOpacity:.08}}).addTo(overlay);centers.forEach(p=>new Vietflex.CircleMarker([p.lat,p.lon],{radius:4,weight:1,fillOpacity:.8}).addTo(overlay));const ls=overlay.getLayers();if(ls.length){const g=new Vietflex.FeatureGroup(ls),b=g.getBounds();if(b.isValid())map.fitBounds(b.pad(.15));}}
 function setMode(m){mode=m;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.mode===m));document.querySelectorAll('.mode').forEach(x=>x.classList.toggle('active',x.dataset.panel===m));if(m==='text'){geometry=null;setCenters([],'Tìm theo khu vực mô tả bằng chữ.');}}
 document.querySelectorAll('.tab').forEach(x=>x.addEventListener('click',()=>setMode(x.dataset.mode)));
 
