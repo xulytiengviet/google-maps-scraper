@@ -275,3 +275,6 @@ footer{
 .local-mode-guide p{margin:0 0 10px}
 .local-download-button{display:inline-block;text-decoration:none;background:var(--primary);color:#fff;border-radius:8px;padding:10px 12px;font-weight:700}
 .local-download-button:hover{filter:brightness(.96)}
+
+.action-config{margin-top:10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.45;background:#0f172a;color:#e2e8f0;border-color:#334155}
+.action-config.hidden{display:none}
