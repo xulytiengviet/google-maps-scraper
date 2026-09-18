@@ -140,7 +140,7 @@ jobs:
           if [ "$EMAIL" = "true" ]; then
             args+=(--email)
           fi
-          if [ "$FAST_MODE" = "true" ]; then
+          if [ "$FAST_MODE" = "true" ] && [ "$EMAIL" != "true" ]; then
             args+=(--fast-mode)
           fi
 
