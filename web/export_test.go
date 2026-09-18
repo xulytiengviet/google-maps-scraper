@@ -1,3 +1,4 @@
+//nolint:testpackage // tests internal export helpers and spatial JobData validation
 package web
 
 import (
